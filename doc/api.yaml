@@ -33,7 +33,7 @@ paths:
                   identifier:
                     type: string
 
-  /setUsername:
+  /setMyUserName:
     post:
       tags:
         - user
@@ -192,7 +192,7 @@ paths:
                 photoId:
                   type: string
       responses:
-        '200':
+        '201':
           description: Photo liked successfully
 
   /unlikePhoto:
@@ -232,7 +232,7 @@ paths:
                 comment:
                   type: string
       responses:
-        '200':
+        '201':
           description: Comment added to the photo
 
   /uncommentPhoto:
