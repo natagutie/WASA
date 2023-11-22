@@ -100,7 +100,6 @@ func setMyUserName(w http.ResponseWriter, r *http.Request) {
 }
 
 func uploadPhoto(w http.ResponseWriter, r *http.Request) {
-	// Implement your uploadPhoto logic here
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -108,12 +107,11 @@ func uploadPhoto(w http.ResponseWriter, r *http.Request) {
 
 // Helper function to generate a unique identifier (simplified)
 func generateIdentifier() string {
-	return "abcdef012345" // Replace with a proper implementation
+	return "abcdef012345" 
 }
 
 // Helper function to get the user identifier from the request context (simplified)
 func getUsernameFromContext(r *http.Request) (string, bool) {
-	// Replace with your authentication logic
 	return "abcdef012345", true
 }
 
