@@ -4,6 +4,14 @@ info:
   description: API for WASAPhoto project
   version: "5"
 
+tags:
+  - name: login
+    description: Operations related to user login
+  - name: user
+    description: Operations related to user management
+  - name: photos
+    description: Operations related to photos
+
 paths:
   /login:
     post:
@@ -22,6 +30,8 @@ paths:
                   type: string
                   minLength: 3
                   maxLength: 16
+              required:
+                - name
       responses:
         '201':
           description: User log-in action successful
@@ -33,7 +43,7 @@ paths:
                   identifier:
                     type: string
 
-  /setUsername:
+  /setMyUserName:
     post:
       tags:
         - user
@@ -48,6 +58,8 @@ paths:
               properties:
                 username:
                   type: string
+              required:
+                - username
       responses:
         '200':
           description: User's username updated successfully
@@ -70,6 +82,8 @@ paths:
                   format: binary
                 caption:
                   type: string
+              required:
+                - file
       responses:
         '201':
           description: Photo uploaded successfully
@@ -89,6 +103,8 @@ paths:
               properties:
                 userId:
                   type: string
+              required:
+                - userId
       responses:
         '200':
           description: User followed successfully
@@ -108,6 +124,8 @@ paths:
               properties:
                 userId:
                   type: string
+              required:
+                - userId
       responses:
         '200':
           description: User unfollowed successfully
@@ -127,6 +145,8 @@ paths:
               properties:
                 userId:
                   type: string
+              required:
+                - userId
       responses:
         '200':
           description: User banned successfully
@@ -146,6 +166,8 @@ paths:
               properties:
                 userId:
                   type: string
+              required:
+                - userId
       responses:
         '200':
           description: User unbanned successfully
@@ -191,8 +213,10 @@ paths:
               properties:
                 photoId:
                   type: string
+              required:
+                - photoId
       responses:
-        '200':
+        '201':
           description: Photo liked successfully
 
   /unlikePhoto:
@@ -210,6 +234,8 @@ paths:
               properties:
                 photoId:
                   type: string
+              required:
+                - photoId
       responses:
         '200':
           description: Photo unliked successfully
@@ -231,8 +257,11 @@ paths:
                   type: string
                 comment:
                   type: string
+              required:
+                - photoId
+                - comment
       responses:
-        '200':
+        '201':
           description: Comment added to the photo
 
   /uncommentPhoto:
@@ -252,6 +281,9 @@ paths:
                   type: string
                 commentId:
                   type: string
+              required:
+                - photoId
+                - commentId
       responses:
         '200':
           description: Comment removed from the photo
@@ -271,6 +303,8 @@ paths:
               properties:
                 photoId:
                   type: string
+              required:
+                - photoId
       responses:
         '200':
           description: Photo deleted successfully
