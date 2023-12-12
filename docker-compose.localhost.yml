@@ -1,0 +1,25 @@
+version: '3.0'
+
+#
+# This Docker Compose is created to simplify how it can be debugged separately
+# frontend and backend, both on localhost.
+#
+# Running on localhost is required because frontend will make API calls to http://localhost:3000/
+#
+
+services:
+  frontend:
+    image: 'simonesestito/wasaphoto-frontend:latest'
+    build:
+      dockerfile: Dockerfile.frontend
+      context: .
+    ports:
+      - "8080:80"
+
+  backend:
+    image: 'simonesestito/wasaphoto-backend:latest'
+    build:
+      dockerfile: Dockerfile.backend
+      context: .
+    ports:
+      - '3000:3000'
