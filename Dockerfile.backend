@@ -1,0 +1,46 @@
+ARG GO_VERSION=1.19.4
+FROM golang:${GO_VERSION}-alpine3.17 AS builder
+
+### Install gcc in order to be able to use CGO later
+RUN apk add --no-cache build-base
+
+### Copy Go code, copying required folders only (use .dockerignore)
+WORKDIR /src/
+COPY . .
+
+### Build executables and strip debug symbols
+# Use the "netgo" tag to resolve DNS queries in Go directly
+RUN CGO_ENABLED=1 \
+	go build  \
+    	-tags netgo  \
+    	-mod=vendor  \
+    	-ldflags '-extldflags "-static"' \
+    	-a \
+    	-o /app/webapi \
+    	./cmd/webapi \
+    && strip /app/*
+
+### Create final container from scratch
+FROM alpine:3.17
+
+### Inform Docker about which port is used
+EXPOSE 3000
+
+### Create and use the "appuser" standard user
+RUN adduser \
+	--home /app/ \
+	--disabled-password \
+	--shell /bin/false \
+	 appuser
+USER appuser
+
+### Copy the build executable from the builder image
+WORKDIR /app/
+COPY --from=builder --chown=appuser:appuser /app/* ./
+
+### Executable command
+ENV CFG_WEB_API_HOST='0.0.0.0:3000'
+ENV CFG_LOG_DEBUG=false
+ENV CFG_DB_FILENAME='/tmp/wasaphoto.db'
+ENV CFG_USER_CONTENT_FS_DIR='/tmp/static/user_content'
+CMD ["/app/webapi"]
