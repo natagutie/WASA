@@ -1,26 +1,25 @@
 import axios from "axios";
-import {getCurrentUID, saveAuthToken} from "./auth-store";
-import router from "../router";
 
-export const api = axios.create({
-	baseURL: __API_URL__,
-	timeout: 1000 * 5,
-	validateStatus: (_) => true,
+const instance = axios.create({
+    baseURL: __API_URL__,
+    timeout: 1000 * 5,
 });
 
-api.interceptors.request.use(config => {
-	config.headers['Authorization'] = 'Bearer ' + getCurrentUID();
-	return config;
-});
+// Interceptor for outbound requests
+instance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
 
-api.interceptors.response.use(async response => {
-	if (response && response.status === 401) {
-		// Logout!
-		saveAuthToken(null);
-		await router.redirectToLogin();
-	}
-	return response;
-});
+        if (token) {
+            config.headers['Authorization'] = 'Bearer ' + token;
+        }
 
-export default api;
+        return config
+    },
 
+    (error) => {
+        return Promise.reject(error);
+    }
+)
+
+export default instance;

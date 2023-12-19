@@ -13,8 +13,6 @@ lerna-debug.log*
 coverage
 *.local
 
-node_modules/
-
 /cypress/videos/
 /cypress/screenshots/
 

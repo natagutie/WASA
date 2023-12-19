@@ -1,77 +1,58 @@
 <script>
-import {StreamService} from "../services";
-import LoadingSpinner from "../components/LoadingSpinner.vue";
-import ErrorMsg from "../components/ErrorMsg.vue";
-import PageSkeleton from "../components/PageSkeleton.vue";
-import ShowMore from "../components/ShowMore.vue";
-import PhotoListItem from "../components/PhotoListItem.vue";
-import router from "../router";
-
 export default {
-	name: 'HomeView',
-	components: {PhotoListItem, ShowMore, PageSkeleton, ErrorMsg, LoadingSpinner},
-	data() {
+	data: function () {
 		return {
-			loading: false,
-			errorMessage: null,
+			errormsg: null,
 			photos: [],
-			photosCursor: null,
-		};
+		}
 	},
-	methods: {
-		async refresh() {
-			this.loading = true;
-			this.errorMessage = null;
-			this.photos = [];
-			this.photosCursor = null;
-			await this.loadMore();
-		},
-		async loadMore() {
-			this.loading = true;
-			this.errorMessage = null;
 
+	methods: {
+		
+		async loadStream() {
 			try {
-				const photoResponse = await StreamService.getMyStream(this.photosCursor);
-				this.photosCursor = photoResponse.nextPageCursor;
-				this.photos.push(...photoResponse.pageData);
-			} catch (err) {
-				this.errorMessage = err.toString();
-			} finally {
-				this.loading = false;
+				this.errormsg = null
+				// Home get: "/users/:id/home"
+				let response = await this.$axios.get("/users/" + localStorage.getItem('token') + "/home")
+
+				if (response.data != null){
+					this.photos = response.data
+				}
+				
+			} catch (e) {
+				this.errormsg = e.toString()
 			}
-		},
-		async goToUpload() {
-			await router.push('/upload');
-		},
+		}
 	},
-	mounted() {
-		this.refresh();
-	},
+
+	async mounted() {
+		await this.loadStream()
+	}
+
 }
 </script>
 
 <template>
-	<PageSkeleton title="Home Page" :main-action="{text: 'Upload Photo', onClick: this.goToUpload}">
-		<LoadingSpinner v-if="loading"/>
-		<ErrorMsg :msg="errorMessage"/>
+	<div class="container-fluid">
+		<ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
 
-		<!-- Photos list -->
-		<PhotoListItem v-for="photo in photos"
-					   :key="photo.id"
-					   :photo="photo"
-					   @error="(err) => this.errorMessage = err"
-					   :show-author="true"/>
+		<div class="row">
+			<Photo
+				v-for="(photo,index) in photos"
+				:key="index"
+				:owner="photo.owner"
+				:photo_id="photo.photo_id"
+				:comments="photo.comments != nil ? photo.comments : []"
+				:likes="photo.likes != nil ? photo.likes : []"
+				:upload_date="photo.date"
+			/>
+		</div>
 
-		<!-- Empty view -->
-		<p v-if="!loading && photos.length === 0 && !errorMessage">
-			<svg class="feather">
-				<use href="/feather-sprite-v4.29.0.svg#frown"/>
-			</svg>
-			No photos to show, you can
-			<RouterLink to="/search">follow someone</RouterLink>
-			to see their photos here!
-		</p>
-
-		<ShowMore v-if="photosCursor && !loading" @loadMore="loadMore"/>
-	</PageSkeleton>
+		<div v-if="photos.length === 0" class="row ">
+			<h1 class="d-flex justify-content-center mt-5" style="color: white;">There's no content yet, follow somebody!</h1>
+		</div>
+	</div>
 </template>
+
+<style>
+</style>

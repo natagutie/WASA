@@ -1,62 +1,91 @@
 <script>
-import {AuthService} from "../services";
-import UsernameInput from '../components/UsernameInput.vue';
-import router from "../router";
-import PageSkeleton from "../components/PageSkeleton.vue";
-import {getCurrentUID} from "../services/auth-store";
-
 export default {
-	data: function () {
+	data: function() {
 		return {
-			errorMessage: null,
-			loading: false,
-			keepSignedIn: true,
-		};
+			errormsg: null,
+			identifier: "",
+			disabled: true,
+		}
 	},
 	methods: {
-		async login(username) {
-			this.loading = true;
-			this.errorMessage = null;
+		async login() {
+			// this.loading = true;
+			this.errormsg = null;
 			try {
-				const {isNewUser} = await AuthService.doLogin(username, this.keepSignedIn);
-				const previousPath = this.$route.query.previous || '/';
-				await router.push(isNewUser ? '/me/edit' : previousPath);
+				// Login (POST): "/session"
+				let response = await this.$axios.post("/session",{
+					user_id: this.identifier.trim()
+				});
+
+				localStorage.setItem('token',response.data.user_id);
+				this.$router.replace("/home")
+				this.$emit('updatedLoggedChild',true)
+				
 			} catch (e) {
-				this.errorMessage = e.toString();
-			} finally {
-				this.loading = false;
+				this.errormsg = e.toString();
 			}
+			// this.loading = false;
 		},
-		onError(error) {
-			this.errorMessage = error;
+	},
+	mounted(){
+		if (localStorage.getItem('token')){
+			this.$router.replace("/home")
 		}
 	},
-	components: {
-		PageSkeleton,
-		UsernameInput,
-	},
-	mounted() {
-		if (getCurrentUID() != null) {
-			// Already logged in, redirect to My Profile
-			router.replace(this.$route.query.previous || '/me');
-		} else if (this.$route.query.previous) {
-			this.errorMessage = 'Login to continue';
-		}
-	}
+	
 }
 </script>
 
 <template>
-	<PageSkeleton title="Login">
-		<ErrorMsg v-if="this.errorMessage" :msg="this.errorMessage"/>
-		<UsernameInput @submit="login" :loading="this.loading" submit-text="Login"/>
+	<div class="container-fluid h-100 m-0 p-0 login">
 
-		<div class="form-check mt-3">
-			<input class="form-check-input" type="checkbox" value="" id="keepSignedInCheck" v-model="keepSignedIn"
-				   :checked="keepSignedIn">
-			<label class="form-check-label" for="keepSignedInCheck">
-				Keep me signed in
-			</label>
+		<div class="row ">
+			<div class="col">
+				<ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
+			</div>
 		</div>
-	</PageSkeleton>
+
+		<div class="row h-100 w-100 m-0">
+			
+			<form @submit.prevent="login" class="d-flex flex-column align-items-center justify-content-center p-0">
+
+				<div class="row mt-2 mb-3 border-bottom">
+					<div class="col">
+						<h2 class="login-title">WASAPhoto Login</h2>
+					</div>
+				</div>
+
+				<div class="row mt-2 mb-3">
+					<div class="col">
+						<input 
+						type="text" 
+						class="form-control" 
+						v-model="identifier" 
+						maxlength="16"
+						minlength="3"
+						placeholder="Your identifier" />
+					</div>
+				</div>
+
+				<div class="row mt-2 mb-5 ">
+					<div class="col ">
+						<button class="btn btn-dark" :disabled="identifier == null || identifier.length >16 || identifier.length <3 || identifier.trim().length<3"> 
+						Register/Login 
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
 </template>
+
+<style>
+.login {
+    background-image: url("../assets/images/people.png");
+    height: 100vh;
+}
+
+.login-title {
+    color: black;
+}
+</style>

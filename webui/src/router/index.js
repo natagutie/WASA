@@ -1,52 +1,48 @@
-import {createRouter, createWebHashHistory} from 'vue-router';
-import HomeView from '../views/HomeView.vue';
-import MyAccountView from '../views/MyAccountView.vue';
-import SearchUsers from '../views/SearchUsers.vue';
-import LoginView from "../views/LoginView.vue";
-import {getCurrentUID} from "../services/auth-store";
-import EditAccountView from "../views/EditAccountView.vue";
-import SingleUserView from "../views/SingleUserView.vue";
-import FollowersView from "../views/FollowersView.vue";
-import FollowingsView from "../views/FollowingsView.vue";
-import PhotoUploadView from "../views/PhotoUploadView.vue";
-import CommentsView from "../views/CommentsView.vue";
+import {
+    createRouter,
+    createWebHashHistory
+} from 'vue-router'
+import HomeView from '../views/HomeView.vue'
+import LoginView from '../views/LoginView.vue'
+import SearchView from '../views/SearchView.vue'
+import ProfileView from '../views/ProfileView.vue'
+import PageNotFoundView from '../views/PageNotFoundView.vue'
+import SettingsView from '../views/SettingsView.vue'
 
 const router = createRouter({
-	history: createWebHashHistory(import.meta.env.BASE_URL),
-	routes: [
-		{path: '/', component: HomeView},
-		{path: '/me', component: MyAccountView},
-		{path: '/search', component: SearchUsers},
-		{path: '/login', component: LoginView},
-		{path: '/me/edit', component: EditAccountView},
-		{path: '/users/:username', component: SingleUserView},
-		{path: '/users/:username/followers', component: FollowersView},
-		{path: '/users/:username/followings', component: FollowingsView},
-		{path: '/upload', component: PhotoUploadView},
-		{path: '/photos/:photoId/comments', component: CommentsView},
-	]
-});
+    history: createWebHashHistory(
+        import.meta.env.BASE_URL),
+    routes: [{
+            path: '/',
+            redirect: '/login'
+        },
+        {
+            path: '/login',
+            component: LoginView
+        },
+        {
+            path: '/home',
+            component: HomeView
+        },
+        {
+            path: '/search',
+            component: SearchView
+        },
+        {
+            path: '/users/:id',
+            component: ProfileView
 
-router.beforeEach((to, from, next) => {
-	const goingToAnonymous = to.path === '/login';
-	const isAuthenticated = getCurrentUID();
-	if (goingToAnonymous || isAuthenticated) {
-		// Allow routing
-		next();
-	} else {
-		// Redirect to log in page
-		next({
-			path: '/login',
-			query: { previous: to.path },
-		});
-	}
-});
+        },
+        {
+            path: '/users/:id/settings',
+            component: SettingsView
 
-router.redirectToLogin = async function () {
-	await this.replace({
-		path: '/login',
-		query: { previous: router.currentRoute.value.path },
-	});
-}.bind(router)
+        },
+        {
+            path: "/:catchAll(.*)",
+            component: PageNotFoundView
+        },
+    ]
+})
 
 export default router
