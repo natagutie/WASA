@@ -1,0 +1,17 @@
+FROM node:lts as builder
+
+### Copy the Vue.js code
+WORKDIR /app
+COPY webui webui
+
+### Build Vue.js into plain HTML/CSS/JS
+WORKDIR /app/webui
+RUN npm run build-prod
+
+
+### Create the final container
+FROM nginx:stable
+
+### Copy the  app from the builder image
+COPY --from=builder /app/webui/dist /usr/share/nginx/html
+
