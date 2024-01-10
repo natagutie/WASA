@@ -36,10 +36,123 @@ import (
 	"fmt"
 )
 
+type User struct {
+	UserID   string `json:"userID"`
+	Username string `json:"Username"`
+}
+type Photo struct {
+	PhotoID     uint64    `json:"photoID"`
+	UserID      string    `json:"userID"`
+	PhotoUserID string    `json:"photoUserID"`
+	Username    string    `json:"username"`
+	Date        string    `json:"date"`
+	LikesNum    int       `json:"like_count"`
+	CommentNum  int       `json:"comment_count"`
+	Comments    []Comment `json:"comment_list"`
+	Photo       []byte    `json:"photo"`
+	IsLiked     bool      `json:"isLiked"`
+}
+
+type Comment struct {
+	CommentID     uint64 `json:"comment_id"`
+	UserID        string `json:"userID"`
+	Username      string `json:"username"`
+	PhotoUsername string `json:"photoUsername"`
+	PhotoUserID   string `json:"photoUserID"`
+	PhotoID       uint64 `json:"photoID"`
+	Comment       string `json:"comment"`
+}
+
+type Like struct {
+	LikeID  int64  `json:"likeID"`
+	UserID  string `json:"userID"`
+	PhotoID uint64 `json:"photoID"`
+}
+
+type Follow struct {
+	UserID       string   `json:"userID"`
+	FollowID     string   `json:"followID"`
+	FollowedID   string   `json:"followed_id"`
+	FollowerList []uint64 `json:"follower_list"`
+}
+
+type Ban struct {
+	UserID    string `json:"userID"`
+	BanUserID string `json:"ban_id"`
+}
+type Profile struct {
+	UserID         string   `json:"userID"`
+	Username       string   `json:"username"`
+	Pictures       []Photo  `json:"pic"`
+	PicNumb        int      `json:"pic_numb"`
+	FollowingCount int      `json:"following_count"`
+	FollowedCount  int      `json:"followed_count"`
+	BanCount       int      `json:"ban_count"`
+	Bans           []string `json:"bans"`
+}
+
+// this one is to get the array of pictures from users you follow
+type Streamer struct {
+	UserID         string   `json:"userID"`
+	StreamedPhotos []Stream `json:"streamedphotos"`
+}
+
+// this one describes the details of the stream which we will add into the array of pictures in Streamer
+type Stream struct {
+	UserID           string    `json:"userID"`
+	FollowedUserID   string    `json:"followed_userID"`
+	FollowedUsername string    `json:"followed_username"`
+	IsLiked          bool      `json:"isLiked"`
+	PhotoID          uint64    `json:"photoID"`
+	Date             string    `json:"date"`
+	LikeCount        int       `json:"like_count"`
+	CommentCount     int       `json:"comment_count"`
+	Photo            []byte    `json:"photo"`
+	Comments         []Comment `json:"comment_list"`
+}
+
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
-	GetName() (string, error)
-	SetName(name string) error
+	LogUser(User) (User, error)
+	LogtheUser(User) (string, error)
+
+	SetUsername(string, User) (string, error)
+	//GetUserId(uint64) (User, error)
+	GetStream(User) ([]Stream, error)
+	CheckUserExist(string) (bool, error)
+	GetUserIDWithUsername(username string) (string, error)
+	GetUsernameWithUserID(userID string) (string, error)
+
+	SetBan(Ban) error
+	SetUnBan(Ban) error
+	BanCheck(ppl1 Ban) (bool, error)
+	GetBanCount(userID string) (int, error)
+	GetBans(userID string) ([]string, error)
+
+	SetPic(Photo) error
+	RemovePic(Photo) error
+	GetPhotoCount(userID string) (int, error)
+	GetPhotos(Photo) ([]Photo, error)
+
+	SetLike(Like) (Like, error)
+	RemoveLike(Like) error
+	GetLikeCount(pic Photo) (int, error)
+	IsLiked(like Like) (bool, error)
+
+	SetComment(Comment) (Comment, error)
+	RemoveComment(Comment) error
+	//GetCommentList(uint64)([]Comment,error)
+	GetCommentCount(Photo) (int, error)
+	RemoveBanComment(ban Ban) error
+	GetComments(pic uint64) ([]Comment, error)
+
+	SetFollow(Follow) error
+	RemoveFollow(Follow) error
+	GetFollowingCount(userID string) (int, error)
+	GetFollowCount(userID string) (int, error)
+	IsFollowing(follow Follow) (bool, error)
+	GetFollowings(userID string) ([]string, error)
+	GetFollowers(userID string) ([]string, error)
 
 	Ping() error
 }
@@ -57,13 +170,79 @@ func New(db *sql.DB) (AppDatabase, error) {
 
 	// Check if table exists. If not, the database is empty, and we need to create the structure
 	var tableName string
-	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
+	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='user';`).Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) {
-		sqlStmt := `CREATE TABLE example_table (id INTEGER NOT NULL PRIMARY KEY, name TEXT);`
-		_, err = db.Exec(sqlStmt)
+		userDB := `CREATE TABLE IF NOT EXISTS user (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			userID TEXT,
+			username TEXT  
+			);` //autoincrement cuz each userid is unique
+		_, err = db.Exec(userDB)
+		if err != nil {
+			return nil, fmt.Errorf("error creating user database structure: %w", err)
+		}
+
+		banDB := `CREATE TABLE IF NOT EXISTS ban (
+			banID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			userID TEXT NOT NULL,
+			banUserID TEXT NOT NULL
+			);`
+		_, err = db.Exec(banDB)
 		if err != nil {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
 		}
+
+		photoDB := `CREATE TABLE photos (
+			photoID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			userID TEXT NOT NULL,
+			username TEXT NOT NULL,
+			date	TEXT NOT NULL,
+			photo	BLOB,
+			FOREIGN KEY (userID) REFERENCES user(userID),
+			FOREIGN KEY (username) REFERENCES user(username)
+			);`
+
+		_, err = db.Exec(photoDB)
+		if err != nil {
+			return nil, fmt.Errorf("error creating database structure: %w", err)
+		}
+
+		followDB := `CREATE TABLE follow (
+				followID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				userID TEXT NOT NULL,
+				toFollowID TEXT NOT NULL,
+				FOREIGN KEY (userID) REFERENCES user(userID)
+				);`
+		_, err = db.Exec(followDB)
+		if err != nil {
+			return nil, fmt.Errorf("error creating database structure: %w", err)
+		}
+
+		likeDB := `CREATE TABLE like (
+			likeID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			userID TEXT NOT NULL,
+			photoID TEXT NOT NULL,
+			FOREIGN KEY (userID) REFERENCES user(userID),
+			FOREIGN KEY (photoID) REFERENCES photos(photoID)
+			);`
+		_, err = db.Exec(likeDB)
+		if err != nil {
+			return nil, fmt.Errorf("error creating database structure: %w", err)
+		}
+		commentDB := `CREATE TABLE comment (
+			commentID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			userID TEXT NOT NULL,
+			username TEXT NOT NULL,
+			photoID TEXT NOT NULL,
+			comment	TEXT NOT NULL,
+			FOREIGN KEY (userID) REFERENCES user(userID),
+			FOREIGN KEY (photoID) REFERENCES photos(photoID)
+			);`
+		_, err = db.Exec(commentDB)
+		if err != nil {
+			return nil, fmt.Errorf("error creating database structure: %w", err)
+		}
+
 	}
 
 	return &appdbimpl{
