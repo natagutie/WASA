@@ -3,49 +3,40 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/ardanlabs/conf"
-	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 	"time"
+
+	"github.com/ardanlabs/conf"
+	"gopkg.in/yaml.v2"
 )
 
-// webAPIConfiguration describes the web API configuration. This structure is automatically parsed by
+// WebAPIConfiguration describes the web API configuration. This structure is automatically parsed by
 // loadConfiguration and values from flags, environment variable or configuration file will be loaded.
-type webAPIConfiguration struct {
+type WebAPIConfiguration struct {
 	Config struct {
 		Path string `conf:"default:/conf/config.yml"`
 	}
 	Web struct {
 		APIHost         string        `conf:"default:0.0.0.0:3000"`
-		ReadTimeout     time.Duration `conf:"default:60s"`
+		DebugHost       string        `conf:"default:0.0.0.0:4000"`
+		ReadTimeout     time.Duration `conf:"default:5s"`
 		WriteTimeout    time.Duration `conf:"default:5s"`
 		ShutdownTimeout time.Duration `conf:"default:5s"`
 	}
-	Log struct {
-		Debug    bool   `conf:"default:true"`
-		FileName string `conf:"default:-"`
-	}
-	DB struct {
-		Filename string `conf:"default:wasaphoto.db"`
-	}
-	// Setup user content storage params
-	UserContent struct {
-		// The local filesystem path where to store data
-		FsDir string `conf:"default:static/user_content"`
-
-		// The virtual API path prefix to prepend to request a static file on this server
-		WebPrefix string `conf:"default:/static/user_content"`
+	Debug bool
+	DB    struct {
+		Filename string `conf:"default:/tmp/wasa.db"`
 	}
 }
 
-// loadConfiguration creates a webAPIConfiguration starting from flags, environment variables and configuration file.
+// loadConfiguration creates a WebAPIConfiguration starting from flags, environment variables and configuration file.
 // It works by loading environment variables first, then update the config using command line flags, finally loading the
 // configuration file (specified in WebAPIConfiguration.Config.Path).
 // So, CLI parameters will override the environment, and configuration file will override everything.
 // Note that the configuration file can be specified only via CLI or environment variable.
-func loadConfiguration() (webAPIConfiguration, error) {
-	var cfg webAPIConfiguration
+func loadConfiguration() (WebAPIConfiguration, error) {
+	var cfg WebAPIConfiguration
 
 	// Try to load configuration from environment variables and command line switches
 	if err := conf.Parse(os.Args[1:], "CFG", &cfg); err != nil {
