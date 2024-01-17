@@ -6,8 +6,35 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+func (db *appdbimpl) LogUser(usr User) (User, error) {
+	checkUser, err := db.CheckUserExist(usr.Username)
 
-func (db *appdbimpl) LogUser(usr User) (string, error) {
+	if err != nil {
+		return User{}, err
+	}
+	if checkUser {
+		var existUser User
+		user, err := db.GetUserIDWithUsername(usr.Username)
+		if err != nil {
+			return User{}, err
+		}
+		existUser.UserID = user
+		existUser.Username = usr.Username
+
+		return existUser, nil
+
+	} else {
+		usr.UserID = usr.Username
+		_, err := db.c.Exec("INSERT INTO user (username, userID) VALUES (?,?)", usr.Username, usr.UserID)
+		if err != nil {
+			return User{}, err
+		}
+
+		return usr, nil
+	}
+
+}
+func (db *appdbimpl) LogtheUser(usr User) (string, error) {
 
 	checkUser, err := db.CheckUserExist(usr.Username)
 
@@ -28,9 +55,9 @@ func (db *appdbimpl) LogUser(usr User) (string, error) {
 		}
 		usr.UserID = id.String()
 
-		_, err2 := db.c.Exec(INSERT INTO user(username, userID) VALUES (?, ?), usr.Username, usr.UserID)
+		_, err2 := db.c.Exec(`INSERT INTO user(username, userID) VALUES (?, ?)`, usr.Username, usr.UserID)
 		if err2 != nil {
-			return "error!", err
+			return "ugh1", err
 		}
 		return usr.UserID, nil
 	}
@@ -52,7 +79,7 @@ func (db *appdbimpl) GetUserIDWithUsername(username string) (string, error) {
 
 	err := db.c.QueryRow("SELECT userID FROM user WHERE username=?", username).Scan(&usrID)
 	if err != nil {
-		return "did not work", err
+		return "hihi didnt work", err
 	}
 
 	return usrID, nil
@@ -75,7 +102,7 @@ func (db *appdbimpl) SetUsername(username string, user User) (string, error) {
 }
 
 func (db *appdbimpl) GetStream(user User) ([]Stream, error) {
-	//select photos from followed users with likes and comments count, in reverse chronological order
+	// Select photos from followed users with likes and comments count, in reverse chronological order
 	rows, err := db.c.Query("SELECT p.photoID, p.photo, p.userID, p.date FROM photos p INNER JOIN follow f ON p.userID = f.toFollowID WHERE f.userID = ? ORDER BY p.date DESC", user.UserID)
 
 	if err != nil {
@@ -129,6 +156,10 @@ func (db *appdbimpl) GetStream(user User) ([]Stream, error) {
 		s.Comments = comments
 
 		streams = append(streams, s)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 
 	return streams, nil

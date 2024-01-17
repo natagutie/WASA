@@ -63,6 +63,10 @@ func (db *appdbimpl) GetComments(pic uint64) ([]Comment, error) {
 
 		comment = append(comment, commenter)
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
 
 	return comment, nil
 }

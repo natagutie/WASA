@@ -1,15 +1,15 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: WasaPhoto API
   description: |-
-    This OpenAPI document describes the functionalities of Wasaphoto, a social media platform. The website has all the basic features such as banning/unbanning other users, liking/unliking photos, upload/delete photos and commenting/uncommenting on photos. 
+    This OpenAPI document describes the functionalities of a social media platform, WasaPhoto. The website has all the basic features such as banning/unbanning other users, liking/unliking photos, upload/delete photos and commenting/uncommenting on photos. 
     
     This API supports Cross-Origin Resource Sharing (CORS), allowing it to interact with other domains in this API for data reasons to increase the website's usability.
     
     This API was created in 2023/2024.
     
   version: "10"
-
+  
 paths:
   /session:
     post:
@@ -26,7 +26,7 @@ paths:
         content:
           application/json:
             schema:
-              description: username of the user
+              description: username of user
               type: object
               properties:
                 username:
@@ -45,8 +45,13 @@ paths:
                 type: object
                 properties:
                   userID:
+                    description:  user identifier of the photo posted by a user.
                     type: string
-                    example: "abcdef012345"
+                    pattern: '^.*?$'
+                    example: "123-123-123" 
+                    minLength: 10
+                    maxLength: 80
+              
    
 
   /username/{username}/checkUser:
@@ -65,8 +70,9 @@ paths:
           description: |-
            username that the current user is searching
           schema:
+            description: username of the user
             type: string
-            example: nata123
+            example: shireen123
         
       responses:
         '200':
@@ -74,9 +80,11 @@ paths:
           content:
             application/json:
               schema:
+                description: returns true if the user exists, otherwise false.
                 type: object
                 properties:
                   isUser:
+                    description: isUser is the variable that is true if the user exists, otherwise false.
                     type: boolean
                     example: true
 
@@ -115,9 +123,10 @@ paths:
               properties:
                 username:
                   type: string
-                  example: Nata2002
-                  minLength: 5
-                  maxLength: 15
+                  example: Maria
+                  pattern: 'ˆ.*?$'
+                  minLength: 3
+                  maxLength: 16
         required: true
       responses:
         '200':
@@ -187,17 +196,15 @@ paths:
         - in: path
           name: userID
           required: true
-          description: |-
-            post photo on user's account by identifying them with their userID.
           schema:
             type: string
+            description: post photo on user's account by identifying them with their userID.
       requestBody:
-        description: |-
-          new photo file upload request. If successful, a new photoID is
-          created. Each photo has a unique identifier which is the photoID.
+        description: new photo file
         content:
           multipart/form-data:
               schema: 
+                description: the photo file
                 type: object
                 properties:
                   file:
@@ -234,6 +241,7 @@ paths:
           description: follow user
           schema:
             type: string
+            description: userID
       responses:
         '200':
           description: list of users followers 
@@ -246,6 +254,7 @@ paths:
           content:
             application/json:
               schema:
+                description: couldnt find username
                 type: object
                 properties:
                   error:
@@ -265,9 +274,10 @@ paths:
         - in: path
           name: userID
           required: true
-          description: follow user
+          description: follow user with userID
           schema:
             type: string
+            description: userID
       responses:
         '200':
           description: list of users followings 
@@ -280,6 +290,7 @@ paths:
           content:
             application/json:
               schema:
+                description: no username in db
                 type: object
                 properties:
                   error:
@@ -308,6 +319,7 @@ paths:
           description: username of the current user.
           schema:
             type: string
+            description: username
         - in: path
           name: followUsername
           required: true
@@ -320,6 +332,7 @@ paths:
           content:
             application/json:
               schema:
+                description: boolean
                 type: object
                 properties:
                   isFollowing:
@@ -331,6 +344,7 @@ paths:
           content:
             application/json:
               schema:
+                description: no userID found
                 type: object
                 properties:
                   error:
@@ -355,12 +369,14 @@ paths:
           description: username of the current user
           schema:
             type: string
+            description: username
         - in: path
           name: followUsername
           required: true
           description: username of the person the account owner wants to follow
           schema:
             type: string
+            description: username that the current user wants to follow
         
       
       responses:
@@ -376,6 +392,7 @@ paths:
             application/json:
               schema:
                 type: object
+                description: no userID found
                 properties:
                   error:
                     type: string
@@ -398,12 +415,14 @@ paths:
             description: current user's username
             schema:
               type: string
+              description: username
           - in: path
             name: followUsername
             required: true
             description: username of the person the account owner wants to unfollow
             schema:
               type: string
+              description: followUsername
         responses:
           '200':
             description: User unfollowed 
@@ -416,6 +435,7 @@ paths:
             content:
               application/json:
                 schema:
+                  description: userID not found
                   type: object
                   properties:
                     error:
@@ -450,6 +470,7 @@ paths:
           content:
             application/json:
               schema:
+                description: check if user banned
                 type: object
                 properties:
                   isBan:
@@ -461,6 +482,7 @@ paths:
           content:
             application/json:
               schema:
+                description: userID not found
                 type: object
                 properties:
                   error:
@@ -500,6 +522,7 @@ paths:
           content:
             application/json:
               schema:
+                description: userID not found
                 type: object
                 properties:
                   error:
@@ -540,6 +563,7 @@ paths:
             content:
               application/json:
                 schema:
+                  description: userID not found
                   type: object
                   properties:
                     error:
@@ -561,6 +585,7 @@ paths:
           required: true
           description: Username of the person trying to retrieve the profile
           schema:
+            description: username
             type: string
             example: maria
             pattern: 'ˆ.*?$'
@@ -581,6 +606,7 @@ paths:
           content:
             application/json:
               schema:
+                description: Username doesnt exist
                 type: object
                 properties:
                   error:
@@ -603,6 +629,7 @@ paths:
           description: userID of the person's stream 
           schema:
             type: string
+            description: userID of current user
       responses:
         '200':
           description: User's stream acquired successfully
@@ -618,6 +645,7 @@ paths:
           content:
             application/json:
               schema:
+                description: stream not found
                 type: object
                 properties:
                   error:
@@ -639,14 +667,16 @@ paths:
           required: true
           description: adding a like to a collection of likes
           schema:
-            type: string
-            example: "picture1"
+            description: photoID
+            type: integer
+            example: 12
         - in: path
           name: userID
           required: true
           description: identification of the user
           schema:
             type: string
+            example: 123-123-123
       responses:
         '200':
           description: Photo is liked
@@ -667,16 +697,19 @@ paths:
         - in: path
           name: photoID
           required: true
-          description: photoID to unlike
+          description: photoID
           schema:
-            type: string
-            example: "picture1"
+            description: photoID
+            type: integer
+            example: 1
         - in: path
           name: userID
           required: true
-          description: ban user
+          description: userID
           schema:
+            description: userID
             type: string
+            example: 123-123-123
       
       responses:
         '200':
@@ -700,8 +733,9 @@ paths:
           required: true
           description: photoID is a unique identifier to retrieve the post in which we would like to post the comment.
           schema:
-            type: string
-            example: "picture1"
+            description: photo identifier
+            type: integer
+            example: 1
                 
       responses:
         '200':
@@ -727,23 +761,30 @@ paths:
           description: photoID is a unique identifier to retrieve the post in which we would like to post the comment.
           schema:
             type: integer
+            description: photoID
             example: 12
         - in: path
           name: userID
           required: true
           description: userID of the person who comments on a photo
           schema:
+            description: userID
             type: string
+            example: 123-123-123
       requestBody:
         description: Here we comment on the photo according to the photoID given as parameter. 
         content:
           application/json:
             schema:
+              description: return comment
               type: object
               properties:
                 comment:
                   type: string
-                  example: "cool pic"
+                  example: "cool pic"                
+                  pattern: 'ˆ.*?$'
+                  minLength: 1
+                  maxLength: 1000
                 
       responses:
         '200':
@@ -767,8 +808,9 @@ paths:
         - in: path
           name: commentID
           required: true
-          description: commentID is the identifier for a comment  
+          description: commentID is the identifier for a comment 
           schema:
+            description: commentID
             type: integer
             example: 1        
       responses:
@@ -778,6 +820,7 @@ paths:
             application/json:
               schema:
                 type: object 
+                description: comment is deleted
                 
           
   /photo/{photoID}/remove:
@@ -797,7 +840,8 @@ paths:
             PhotoID is a unique identifier. This is needed to retrieve the
             specific photo to delete.
           schema:
-            type: string
+            type: integer
+            description: photoID
             example: "pic1"
       responses:
         '200':
@@ -805,6 +849,7 @@ paths:
           content:
             application/json:
               schema:
+                description: photo is deleted
                 type: object
                 properties:
                   message:
@@ -816,6 +861,7 @@ paths:
           content:
             application/json:
               schema:
+                description: error photo cant be deleted
                 type: object
                 properties:
                   error:
@@ -835,7 +881,7 @@ components:
       type: object
       description: user's username
       properties:
-        Username:
+        username:
           type: string
           example: Maria
           pattern: 'ˆ.*?$'
@@ -880,9 +926,63 @@ components:
           description: user's photos in reverse chronological order.
           minItems: 0
           maxItems: 9999999
-          items: { $ref: "#/components/schemas/Photo"} 
+          items: 
+            type: object
+            description: A photo
+            properties:
+              photoID: 
+                type: integer
+                description: the unique identifier for a photo
+                minLength: 3
+                maxLength: 500
+                example: 1
+        
+              userID:
+                type: string
+                description: user identifier
+                minLength: 10
+                maxLength: 80
+                example: 123-123-123
+                pattern: '^.*?$'
+
+                                 
+
+              photo:
+                type: string
+                format: binary
+                minLength: 1
+                maxLength: 100000
+                
+              like_count:
+                type: integer
+                description: The number of likes of the photo.
+                example: 22
+              comment_count:
+                type: integer
+                description: The number of comments of a photo.
+                example: 22
+              date:
+                type: string
+                format: date-time
+                minLength: 20
+                maxLength: 21
+                description: the date and time when the photo is uploaded.
+                pattern: '^.*?$'
+                example: 2021-05-10T06:11:09Z
+              username:
+                type: string
+                example: Maria
+                pattern: 'ˆ.*?$'
+                minLength: 3
+                maxLength: 16
+                description: the username
+              isLiked:
+                type: boolean
+                example: true
+                description: check whether the current user has liked the photo
+          
           example: 
-            - photoID: "123-123-123"
+            - photoID: 12
               commentCount: 10
               likeCount: 103
               date: 2021-01-01T02:08:13Z
@@ -894,14 +994,14 @@ components:
         photoID: 
           type: integer
           description: the unique identifier for a photo
-          minLength: 3
-          maxLength: 500
           example: 1
         userID:
           type: string
           description: user identifier
           minLength: 10
           maxLength: 80
+          example: 123-123-123
+          pattern: '^.*?$'
         photo:
           type: string
           format: binary
@@ -952,24 +1052,22 @@ components:
             properties:
               photoID: 
                 description:  the photo identifier.
-                type: string
-                pattern: '^.*?$'
-                example: "123-123-123"
-                minLength: 3
-                maxLength: 50
+                type: integer
+                example: 12
+           
               userID:
                 description:  user identifier of the photo posted by a user.
                 type: string
                 pattern: '^.*?$'
                 example: "123-123-123" 
-                minLength: 3
-                maxLength: 50
+                minLength: 10
+                maxLength: 80
                 
               username:
                 description: username.
                 type: string
                 pattern: '^.*?$'
-                example: nata123
+                example: shireen123
                 minLength: 3
                 maxLength: 16
                 
@@ -1028,9 +1126,8 @@ components:
       properties:
         followers:
           type: array
-          minLength: 3
+          minLength: 0
           maxLength: 100000
-          pattern: '^.*?$'
           description: a list of all the followers of the user
           items:
             type: object
@@ -1040,7 +1137,7 @@ components:
                 description: username.
                 type: string
                 pattern: '^.*?$'
-                example: nata123
+                example: shireen123
                 minLength: 3
                 maxLength: 16
                 
@@ -1084,7 +1181,7 @@ components:
           pattern: '^.*?$'
           minLength: 3
           maxLength: 16
-          example: "nata123" 
+          example: "shireen123" 
           
         text:
           type: string
@@ -1092,16 +1189,13 @@ components:
           pattern: '^.*?$'
           minLength: 1
           maxLength: 3000
-          example: nice picture!
+          example: nice pic
 
 
         photoID: 
           description:  the photo identifier.
-          type: string
-          pattern: '^.*?$'
-          example: "123-123-123"
-          minLength: 3
-          maxLength: 50
+          type: integer
+          example: 12
 
         photoUser:
           type: string
@@ -1109,7 +1203,7 @@ components:
           pattern: '^.*?$'
           minLength: 3
           maxLength: 16
-          example: "nata123" 
+          example: "shireen123" 
 
     CommentList:
       type: object
@@ -1125,46 +1219,21 @@ components:
             properties:
               photoID: 
                 description:  the photo identifier.
-                type: string
-                pattern: '^.*?$'
-                example: "123-123-123"
-                minLength: 3
-                maxLength: 50
+                type: integer
+                example: 12
               comment:
                 description: the comment posted on the photo
                 type: string
                 pattern: '^.*?$'
-                example: nice picture!
+                example: nice pic 
                 minLength: 3
                 maxLength: 10000
               username:
                 description: the username of the person who wrote the comment on the photo
                 type: string
                 pattern: '^.*?$'
-                example: nata12 
+                example: shireen12 
                 minLength: 3
-                maxLength: 10000
+                maxLength: 16
                 
-        
-
-
-
-        
-
-    
-
-
-        
-            
- 
-
-          
       
-  
-    
-  
-              
-  
-
-
-

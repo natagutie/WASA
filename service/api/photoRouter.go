@@ -36,7 +36,7 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	pic.CommentNum = 0
 	pic.LikesNum = 0
 
-	err = rt.db.InsertPhoto(pic)
+	err = rt.db.SetPic(pic)
 	if err != nil {
 		http.Error(w, "Error inserting picture", http.StatusInternalServerError)
 		return
@@ -63,7 +63,7 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	pic.UserID = userID
 	pic.PhotoID = photoID
 
-	err = rt.db.RemovePhoto(pic)
+	err = rt.db.RemovePic(pic)
 	if err != nil {
 		http.Error(w, "Error saving comment", http.StatusInternalServerError)
 		return

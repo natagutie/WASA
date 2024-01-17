@@ -1,4 +1,4 @@
-module github.com/natagutie/WASA
+module github.com/shireen03/WASAphoto 
 
 go 1.17
 

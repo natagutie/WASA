@@ -5,11 +5,11 @@ persistent database are handled here. Database specific logic should never escap
 To use this package you need to apply migrations to the database if needed/wanted, connect to it (using the database
 data source name from config), and then initialize an instance of AppDatabase from the DB connection.
 
-For example, this code adds a parameter in webapi executable for the database data source name (add it to the
+For example, this code adds a parameter in `webapi` executable for the database data source name (add it to the
 main.WebAPIConfiguration structure):
 
 	DB struct {
-		Filename string conf:""
+		Filename string `conf:""`
 	}
 
 This is an example on how to migrate the DB and connect to it:
@@ -37,85 +37,87 @@ import (
 )
 
 type User struct {
-	UserID   string json:"userID"
-	Username string json:"Username"
+	UserID   string `json:"userID"`
+	Username string `json:"Username"`
 }
 type Photo struct {
-	PhotoID     uint64    json:"photoID"
-	UserID      string    json:"userID"
-	PhotoUserID string    json:"photoUserID"
-	Username    string    json:"username"
-	Date        string    json:"date"
-	LikesNum    int       json:"like_count"
-	CommentNum  int       json:"comment_count"
-	Comments    []Comment json:"comment_list"
-	Photo       []byte    json:"photo"
-	IsLiked     bool      json:"isLiked"
+	PhotoID     uint64    `json:"photoID"`
+	UserID      string    `json:"userID"`
+	PhotoUserID string    `json:"photoUserID"`
+	Username    string    `json:"username"`
+	Date        string    `json:"date"`
+	LikesNum    int       `json:"like_count"`
+	CommentNum  int       `json:"comment_count"`
+	Comments    []Comment `json:"comment_list"`
+	Photo       []byte    `json:"photo"`
+	IsLiked     bool      `json:"isLiked"`
 }
 
 type Comment struct {
-	CommentID     uint64 json:"comment_id"
-	UserID        string json:"userID"
-	Username      string json:"username"
-	PhotoUsername string json:"photoUsername"
-	PhotoUserID   string json:"photoUserID"
-	PhotoID       uint64 json:"photoID"
-	Comment       string json:"comment"
+	CommentID     uint64 `json:"comment_id"`
+	UserID        string `json:"userID"`
+	Username      string `json:"username"`
+	PhotoUsername string `json:"photoUsername"`
+	PhotoUserID   string `json:"photoUserID"`
+	PhotoID       uint64 `json:"photoID"`
+	Comment       string `json:"comment"`
 }
 
 type Like struct {
-	LikeID  int64  json:"likeID"
-	UserID  string json:"userID"
-	PhotoID uint64 json:"photoID"
+	LikeID  int64  `json:"likeID"`
+	UserID  string `json:"userID"`
+	PhotoID uint64 `json:"photoID"`
 }
 
 type Follow struct {
-	UserID       string   json:"userID"
-	FollowID     string   json:"followID"
-	FollowedID   string   json:"followed_id"
-	FollowerList []uint64 json:"follower_list"
+	UserID       string   `json:"userID"`
+	FollowID     string   `json:"followID"`
+	FollowedID   string   `json:"followed_id"`
+	FollowerList []uint64 `json:"follower_list"`
 }
 
 type Ban struct {
-	UserID    string json:"userID"
-	BanUserID string json:"ban_id"
+	UserID    string `json:"userID"`
+	BanUserID string `json:"ban_id"`
 }
 type Profile struct {
-	UserID         string   json:"userID"
-	Username       string   json:"username"
-	Pictures       []Photo  json:"pic"
-	PicNumb        int      json:"pic_numb"
-	FollowingCount int      json:"following_count"
-	FollowedCount  int      json:"followed_count"
-	BanCount       int      json:"ban_count"
-	Bans           []string json:"bans"
+	UserID         string   `json:"userID"`
+	Username       string   `json:"username"`
+	Pictures       []Photo  `json:"pic"`
+	PicNumb        int      `json:"pic_numb"`
+	FollowingCount int      `json:"following_count"`
+	FollowedCount  int      `json:"followed_count"`
+	BanCount       int      `json:"ban_count"`
+	Bans           []string `json:"bans"`
 }
 
 // this one is to get the array of pictures from users you follow
 type Streamer struct {
-	UserID         string   json:"userID"
-	StreamedPhotos []Stream json:"streamedphotos"
+	UserID         string   `json:"userID"`
+	StreamedPhotos []Stream `json:"streamedphotos"`
 }
 
 // this one describes the details of the stream which we will add into the array of pictures in Streamer
 type Stream struct {
-	UserID           string    json:"userID"
-	FollowedUserID   string    json:"followed_userID"
-	FollowedUsername string    json:"followed_username"
-	IsLiked          bool      json:"isLiked"
-	PhotoID          uint64    json:"photoID"
-	Date             string    json:"date"
-	LikeCount        int       json:"like_count"
-	CommentCount     int       json:"comment_count"
-	Photo            []byte    json:"photo"
-	Comments         []Comment json:"comment_list"
+	UserID           string    `json:"userID"`
+	FollowedUserID   string    `json:"followed_userID"`
+	FollowedUsername string    `json:"followed_username"`
+	IsLiked          bool      `json:"isLiked"`
+	PhotoID          uint64    `json:"photoID"`
+	Date             string    `json:"date"`
+	LikeCount        int       `json:"like_count"`
+	CommentCount     int       `json:"comment_count"`
+	Photo            []byte    `json:"photo"`
+	Comments         []Comment `json:"comment_list"`
 }
 
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
-	LogUser(usr User) (string, error)
+	LogUser(User) (User, error)
+	LogtheUser(User) (string, error)
 
 	SetUsername(string, User) (string, error)
+	//GetUserId(uint64) (User, error)
 	GetStream(User) ([]Stream, error)
 	CheckUserExist(string) (bool, error)
 	GetUserIDWithUsername(username string) (string, error)
@@ -127,11 +129,10 @@ type AppDatabase interface {
 	GetBanCount(userID string) (int, error)
 	GetBans(userID string) ([]string, error)
 
-	InsertPhoto(pic Photo) error 
-	RemovePhoto(photo Photo) error
+	SetPic(Photo) error
+	RemovePic(Photo) error
 	GetPhotoCount(userID string) (int, error)
 	GetPhotos(Photo) ([]Photo, error)
-	
 
 	SetLike(Like) (Like, error)
 	RemoveLike(Like) error
@@ -144,7 +145,6 @@ type AppDatabase interface {
 	GetCommentCount(Photo) (int, error)
 	RemoveBanComment(ban Ban) error
 	GetComments(pic uint64) ([]Comment, error)
-
 
 	SetFollow(Follow) error
 	RemoveFollow(Follow) error
@@ -161,8 +161,8 @@ type appdbimpl struct {
 	c *sql.DB
 }
 
-// New returns a new instance of AppDatabase based on the SQLite connection db.
-// db is required - an error will be returned if db is nil.
+// New returns a new instance of AppDatabase based on the SQLite connection `db`.
+// `db` is required - an error will be returned if `db` is `nil`.
 func New(db *sql.DB) (AppDatabase, error) {
 	if db == nil {
 		return nil, errors.New("database is required when building a AppDatabase")
@@ -170,7 +170,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 
 	// Check if table exists. If not, the database is empty, and we need to create the structure
 	var tableName string
-	err := db.QueryRow(SELECT name FROM sqlite_master WHERE type='table' AND name='user';).Scan(&tableName)
+	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='user';`).Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) {
 		userDB := `CREATE TABLE IF NOT EXISTS user (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
