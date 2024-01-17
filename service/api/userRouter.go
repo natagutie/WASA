@@ -21,7 +21,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	newuser, err := rt.db.LogtheUser(user)
+	newuser, err := rt.db.LogUser(user)
 
 	if err != nil {
 		http.Error(w, "Invalid account creationssdkslfjòlskadjfljsadòlfss", http.StatusConflict)

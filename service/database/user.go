@@ -6,35 +6,8 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-func (db *appdbimpl) LogUser(usr User) (User, error) {
-	checkUser, err := db.CheckUserExist(usr.Username)
 
-	if err != nil {
-		return User{}, err
-	}
-	if checkUser {
-		var existUser User
-		user, err := db.GetUserIDWithUsername(usr.Username)
-		if err != nil {
-			return User{}, err
-		}
-		existUser.UserID = user
-		existUser.Username = usr.Username
-
-		return existUser, nil
-
-	} else {
-		usr.UserID = usr.Username
-		_, err := db.c.Exec("INSERT INTO user (username, userID) VALUES (?,?)", usr.Username, usr.UserID)
-		if err != nil {
-			return User{}, err
-		}
-
-		return usr, nil
-	}
-
-}
-func (db *appdbimpl) LogtheUser(usr User) (string, error) {
+func (db *appdbimpl) LogUser(usr User) (string, error) {
 
 	checkUser, err := db.CheckUserExist(usr.Username)
 
@@ -55,7 +28,7 @@ func (db *appdbimpl) LogtheUser(usr User) (string, error) {
 		}
 		usr.UserID = id.String()
 
-		_, err2 := db.c.Exec(`INSERT INTO user(username, userID) VALUES (?, ?)`, usr.Username, usr.UserID)
+		_, err2 := db.c.Exec(INSERT INTO user(username, userID) VALUES (?, ?), usr.Username, usr.UserID)
 		if err2 != nil {
 			return "error!", err
 		}
