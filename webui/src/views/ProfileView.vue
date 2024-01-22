@@ -59,6 +59,7 @@ export default {
         var modal = document.getElementById("commentModal");
         modal.style.display = "block";
     },
+    
     async deleteComment(commentID, photoID) {
         let response=await this.$axios.delete("/uncomment/"+commentID, {
                 headers: {
@@ -66,7 +67,7 @@ export default {
                 }
             });
         
-        this.AccountInfo();
+        this.refresh();
         this.getComments(photoID);
     
     },
@@ -122,8 +123,6 @@ export default {
                 }
     });
     this.getPhotos();
-    console.log(response.data);
-
     },
 
     async unLikePhoto(photoID){
@@ -205,7 +204,6 @@ export default {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
-            console.log(response.data);
             this.refresh();
             }
      catch(e){
@@ -218,7 +216,9 @@ export default {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
+        this.refresh();
         this.getPhotos();
+    
        
     },
        
@@ -368,7 +368,7 @@ export default {
 
 
 
-<div class="modal " id="commentModal" tabindex="-1" role="dialog">
+                    <div class="modal " id="commentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <span @click="closeModal" class="close">&times;</span>
@@ -380,14 +380,13 @@ export default {
             <div class="modal-body">
                 <div v-for="comment in this.comments" v-bind:key="comment.commentID">
                 <p> <b>{{ comment.username }}  </b> {{ comment.comment }} </p>
-                <button v-if="comment.username==this.userUsername" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, photo.photoID)">Delete</button>
+                <button v-if="comment.username==this.userUsername" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, comment.photoID)">Delete</button>
                 <br>
                 </div>
             </div>
         </div>
     </div>
-</div>
-                    
+</div>              
                     <p >  likes: {{ photo.like_count }}<br>
                     comments: {{ photo.comment_count }}<br>
                      date: {{ photo.date }}</p>

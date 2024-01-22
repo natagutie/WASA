@@ -10,14 +10,22 @@ import (
 )
 
 func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
+	userIDk := getAuth(r.Header.Get("Authorization"))
 
+	username := ps.ByName("username")
+	userID, err := rt.db.GetUserIDWithUsername(username)
+	if err != nil {
+		return
+	}
 	banUsername := ps.ByName("banUsername")
 	banUserID, err := rt.db.GetUserIDWithUsername(banUsername)
 	if err != nil {
 		return
 	}
 	var ban database.Ban
+	if userIDk == userID {
+		ban.BanUserID = userID
+	}
 	ban.UserID = userID
 	ban.BanUserID = banUserID
 

@@ -54,6 +54,7 @@ func (db *appdbimpl) GetComments(pic uint64) ([]Comment, error) {
 		if err != nil {
 			return nil, err
 		}
+		commenter.PhotoID = pic
 
 		Username, err := db.GetUsernameWithUserID(commenter.UserID)
 		if err != nil {

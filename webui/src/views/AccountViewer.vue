@@ -46,7 +46,6 @@ export default {
                 this.currentUserID=localStorage.getItem("userID");
 
                 this.userUsername=this.$route.params.username;
-                console.log(this.userUsername);
 
                 this.currentUser=localStorage.getItem("username");
                 let checkBan = await this.$axios.get("/username/"+ this.userUsername + "/ban/" + this.currentUser, {
@@ -117,7 +116,6 @@ export default {
                 });
    
                 this.theyFollow=response3.data;
-                console.log("are they following?" + this.theyFollow);
             
 			} catch (e) {
 				this.errormsg = e.toString();
@@ -184,7 +182,6 @@ async uploadComment(photoID,yuhcomment){
     async getFollow(){
         try{     
             this.currentUser=localStorage.getItem("username");
-            console.log(this.isFollow);
             if(this.isFollow){
                 let response=await this.$axios.delete("/username/" + this.currentUser + "/follow/" + this.userUsername, {
                     headers: {
@@ -195,7 +192,6 @@ async uploadComment(photoID,yuhcomment){
                 document.getElementById("follow").innerHTML = "follow"; 
                 this.refresh();
             }else{
-                console.log("ban check:" + this.isBan);
                 if(this.isBan==false){
                 let response=await this.$axios.post("/username/" + this.currentUser + "/follow/" + this.userUsername, {
                     headers: {
@@ -274,8 +270,6 @@ async uploadComment(photoID,yuhcomment){
     },    
     async LikePhoto(photoID){
 
-        console.log("putting like")
-
         let response=await this.$axios.post("/user/" + this.currentUserID + "/photo/" + photoID +"/like", {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem("userID")
@@ -286,14 +280,11 @@ async uploadComment(photoID,yuhcomment){
 
     async unLikePhoto(photoID){
 
-        console.log("deleting like")
         let response=await this.$axios.delete("/user/" + this.currentUserID + "/photo/" + photoID +"/like", {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
         });
-        console.log(response.data);
-
         this.getPhotos();
     },
     },
@@ -360,7 +351,7 @@ async uploadComment(photoID,yuhcomment){
             <div class="modal-body">
                 <div v-for="comment in this.comments" v-bind:key="comment.commentID">
                 <p> <b>{{ comment.username }}  </b> {{ comment.comment }} </p>
-                <button v-if="comment.username==this.currentUser" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, photo.photoID)">Delete</button>
+                <button v-if="comment.username==this.currentUser" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, comment.photoID)">Delete</button>
                 <br>
                 </div>
             </div>

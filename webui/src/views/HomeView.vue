@@ -36,10 +36,8 @@ export default {
 		async getStream() {
 
 			try {
-				console.log("mfs");
 				this.userID=localStorage.getItem("userID");
 				this.userUsername= localStorage.getItem("username");
-
 
 				let response = await this.$axios.get("/user/" + this.userID + "/stream", {
                 headers: {
@@ -81,14 +79,12 @@ export default {
             });
         
         
-        this.refresh();
+        this.getStream();
         this.getComments(photoID);
     
     },
 
 	async LikePhoto(photoID){
-
-		console.log("putting like")
 
         let response=await this.$axios.post("/user/" + this.userID + "/photo/" + photoID +"/like", {
                 headers: {
@@ -96,36 +92,33 @@ export default {
                 }
         });
     this.getStream();
+    
 	},
 
 	async unLikePhoto(photoID){
-
-	console.log("deleting like")
 	let response=await this.$axios.delete("/user/" + this.userID + "/photo/" + photoID +"/like", {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
-	console.log(response.data);
 
 	this.getStream();
 	},
 
 	async uploadComment(photoID,yuhcomment){
-        console.log(yuhcomment);
            
            let response=await this.$axios.post("/user/" + this.userID + "/photo/" + photoID +"/comment", { comment: yuhcomment }, {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
-           console.log(response.data);
            this.getStream();
 	},
 
 	async refresh() {
+        this.getPhotos();
 		this.getComments();
-		this.getPhotos();
+		
 	},
 	
 },
@@ -176,7 +169,7 @@ export default {
             <div class="modal-body">
                 <div v-for="comment in this.comments" v-bind:key="comment.commentID">
                 <p> <b>{{ comment.username }}  </b> {{ comment.comment }} </p>
-                <button v-if="comment.username==this.userUsername" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, photo.photoID)">Delete</button>
+                <button v-if="comment.username==this.userUsername" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, comment.photoID)">Delete</button>
                 <br>
                 </div>
             </div>
