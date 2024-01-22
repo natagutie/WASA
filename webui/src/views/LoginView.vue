@@ -11,25 +11,17 @@ export default {
 
 	async dologin(){
 		try {
-				
-				console.log("Login method called")
-
 
 				let response = await this.$axios.post("/session",{
                     username: this.username
                 });
-        
-        console.log(response);
-      
+              
 				localStorage.setItem("username", this.username);
         localStorage.setItem("userID", response.data);
 
         this.userID = response.data;
        
-        // this.$axios.defaults.headers.common['Authorization']=`Bearer ${localStorage.getItem("userID")}`;
-
-
-
+        this.$axios.defaults.headers.common['Authorization']=`Bearer ${localStorage.getItem("userID")}`;
 
         this.$router.push({path: "/session"});
 			} catch (e) {
@@ -76,4 +68,3 @@ export default {
 
 
 </style>
-
