@@ -23,9 +23,9 @@ export default {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
-            
             this.isban=response.data
             console.log(this.isban);
+
 
             let response2=await this.$axios.get("/username/"+ this.search + "/checkUser", {
                 headers: {

@@ -10,22 +10,14 @@ import (
 )
 
 func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userIDk := getAuth(r.Header.Get("Authorization"))
+	userID := getAuth(r.Header.Get("Authorization"))
 
-	username := ps.ByName("username")
-	userID, err := rt.db.GetUserIDWithUsername(username)
-	if err != nil {
-		return
-	}
 	banUsername := ps.ByName("banUsername")
 	banUserID, err := rt.db.GetUserIDWithUsername(banUsername)
 	if err != nil {
 		return
 	}
 	var ban database.Ban
-	if userIDk == userID {
-		ban.BanUserID = userID
-	}
 	ban.UserID = userID
 	ban.BanUserID = banUserID
 
@@ -80,7 +72,14 @@ func (rt *_router) unbanUser(w http.ResponseWriter, r *http.Request, ps httprout
 }
 
 func (rt *_router) isBan(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
+	userIDD := getAuth(r.Header.Get("Authorization"))
+	username := ps.ByName("username")
+	userID, err := rt.db.GetUserIDWithUsername(username)
+	if err != nil {
+		http.Error(w, "cant find userID with username", http.StatusBadRequest)
+
+		return
+	}
 
 	banUsername := ps.ByName("banUsername")
 	banUserID, err := rt.db.GetUserIDWithUsername(banUsername)
@@ -90,6 +89,10 @@ func (rt *_router) isBan(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		return
 	}
 	var ban database.Ban
+	if userIDD == userID {
+		ban.UserID = userID
+	}
+
 	ban.UserID = userID
 	ban.BanUserID = banUserID
 
