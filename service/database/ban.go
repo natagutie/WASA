@@ -38,7 +38,7 @@ func (db *appdbimpl) GetBansList(username string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		banList = append(banList, username)
+		banList = append(banList, bUsername)
 	}
 	err = rows.Err()
 	if err != nil {

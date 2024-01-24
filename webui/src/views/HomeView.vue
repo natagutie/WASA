@@ -40,6 +40,7 @@ export default {
           }
         });
         this.streamList = response.data;
+
         console.log(response.data);
 
         for (let i = 0; i < this.streamList.length; i++) {
