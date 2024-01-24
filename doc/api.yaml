@@ -2,13 +2,11 @@ openapi: 3.0.3
 info:
   title: WasaPhoto API
   description: |-
-    This OpenAPI document describes the functionalities of a social media platform, WasaPhoto. The website has all the basic features such as banning/unbanning other users, liking/unliking photos, upload/delete photos and commenting/uncommenting on photos. 
+    This OpenAPI photoFile describes the abilities of the website WASAPHOTO. It is a social media platform, which allows users to follow each other, like and comment on photos and even ban them. 
+    This API was made in 2023/2024.
+    The API allows Cross Origin Resource Sharing (CORS).
     
-    This API supports Cross-Origin Resource Sharing (CORS), allowing it to interact with other domains in this API for data reasons to increase the website's usability.
-    
-    This API was created in 2023/2024.
-    
-  version: "10"
+  version: "20"
   
 paths:
   /session:
@@ -48,7 +46,7 @@ paths:
                     description:  user identifier of the photo posted by a user.
                     type: string
                     pattern: '^.*?$'
-                    example: "123-123-123" 
+                    example: "122131313" 
                     minLength: 10
                     maxLength: 80
               
@@ -57,9 +55,9 @@ paths:
   /username/{username}/checkUser:
     get:
       tags: ["user"]
-      summary: check if user exists
+      summary: check for existance of user
       description: |-
-        This endpoint checks if the user exists in the database
+        This endpoint verifis if the user has an account
       security:
         - bearerAuth: []     
       operationId: checkUser
@@ -68,34 +66,33 @@ paths:
           name: username
           required: true
           description: |-
-           username that the current user is searching
+           username of the user, to check if they exist
           schema:
             description: username of the user
             type: string
-            example: shireen123
+            example: Maria12
         
       responses:
         '200':
-          description: returns true if the user exists, otherwise false
+          description: Managed to check if the user is in DB
           content:
             application/json:
               schema:
                 description: returns true if the user exists, otherwise false.
                 type: object
                 properties:
-                  isUser:
-                    description: isUser is the variable that is true if the user exists, otherwise false.
+                  checkingUser:
+                    description: checkingUser is the variablethat is true if the user exists and false if the user doesnt exist.
                     type: boolean
                     example: true
 
 
-  /user/{userID}/setusername/{username}:
+  /username/{username}:
     put:
       tags: ["user"]
-      summary: Sets or updates the user's username 
+      summary: Sets the username of a user
       description: |-
-        This endpoint allows the user to set their new username.
-        If successful, it returns a message that the username has been updated. The username can not be set if it already exists.
+        This endpoint allows the user to change their username.
       security:
         - bearerAuth: []
       parameters:
@@ -106,16 +103,9 @@ paths:
             username for login
           schema:
             type: string
-        - in: path
-          name: userID
-          required: true
-          description: |-
-            username for login
-          schema:
-            type: string
       operationId: setMyUserName
       requestBody:
-        description: New username
+        description: Make a Username
         content:
           application/json:
             schema:
@@ -130,13 +120,13 @@ paths:
         required: true
       responses:
         '200':
-          description: The username has been updated
+          description: new username is inserted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Username"
+                $ref: "#/components/schemas/username"
         '400':
-          description: Username already exists
+          description: failed to change username
           content:
             application/json:
               schema:
@@ -146,36 +136,31 @@ paths:
                     type: string
                     example: "UserID not found"
 
-  /user/{userID}/photo/{photoUserID}:
+  /photouser/{photoUsername}:
     get:
       tags: ["photo"]
-      summary: get list of users photos
+      summary: get the photos from a user
       description: |-
-        This endpoint allows a user to see their photos
+        This endpoint retrieves the uploaded photos by a user
       security:
         - bearerAuth: []     
-      operationId: getPhotolist
+      operationId: getPhotos
       parameters:
         - in: path
-          name: userID
+          name: photoUsername
           required: true
-          description: |-
-           userID of the current users account
+          description: Username of the person trying to retrieve the profile
           schema:
+            description: username
             type: string
-            example: "123-123-123"
-        - in: path
-          name: photoUserID
-          required: true
-          description: |-
-           userID of the account we view their posted photos
-          schema:
-            type: string
-            example: "123-123-123"
+            example: maria
+            pattern: 'ˆ.*?$'
+            minLength: 1
+            maxLength: 32
       
       responses:
         '200':
-          description: Photo uploaded successfully
+          description: Photo is uploaded
           content:
             application/json:
               schema:
@@ -183,22 +168,15 @@ paths:
 
 
           
-  /photo/upload/{userID}:
+  /photo:
     post:
       tags: ["photo"]
       summary: Upload a photo
       description: |-
-        This endpoint allows a user to upload a photo.
+        Upload a photo
       security:
         - bearerAuth: []     
       operationId: uploadPhoto
-      parameters:
-        - in: path
-          name: userID
-          required: true
-          schema:
-            type: string
-            description: post photo on user's account by identifying them with their userID.
       requestBody:
         description: new photo file
         content:
@@ -208,15 +186,14 @@ paths:
                 type: object
                 properties:
                   file:
-                    type: string
                     format: binary
-                    
+                    type: string
           
         required: true
 
       responses:
         '200':
-          description: Photo uploaded successfully
+          description: Photos of a user is retrieved
           content:
             application/json:
               schema:
@@ -225,59 +202,43 @@ paths:
 
                 
                 
-  /user/{userID}/followers:
+  /followers:
     get:
       tags: ["follow"]
-      summary: user's followers
+      summary: followers of user
       description: |-
         This endpoint allows a user to retrieve their followers
       security:
         - bearerAuth: []
-      operationId: followersUser
-      parameters:
-        - in: path
-          name: userID
-          required: true
-          description: follow user
-          schema:
-            type: string
-            description: userID
+      operationId: getUserFollowers
       responses:
         '200':
-          description: list of users followers 
+          description: user follower list
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Followers"
         '400':
-          description: Username not found
+          description: Error getting followers
           content:
             application/json:
               schema:
-                description: couldnt find username
+                description: couldnt find user
                 type: object
                 properties:
                   error:
                     type: string
-                    example: "username not found"
+                    example: "user not found"
 
-  /user/{userID}/followings:
+  /followings:
     get:
       tags: ["follow"]
-      summary: user's followings
+      summary: get followings of user
       description: |-
-        This endpoint allows a user to retrieve their followers
+        This endpoint allows a user to retrieve users that they follow
       security:
         - bearerAuth: []
-      operationId: followingsUser
-      parameters:
-        - in: path
-          name: userID
-          required: true
-          description: follow user with userID
-          schema:
-            type: string
-            description: userID
+      operationId: getUserFollowings
       responses:
         '200':
           description: list of users followings 
@@ -286,61 +247,53 @@ paths:
               schema:
                 $ref: "#/components/schemas/Followers"
         '400':
-          description: Username not found
+          description: couldnt find the followings
           content:
             application/json:
               schema:
-                description: no username in db
+                description: error in getting followings
                 type: object
                 properties:
                   error:
                     type: string
-                    example: "username not found"
+                    example: "error getting user followings"
                     
                     
                   
           
                   
           
-  /username/{username}/follow/{followUsername}:
-  
+  /follow/{fUsername}:
     get:
       tags: ["follow"]
-      summary: check whether the user is following another user
+      summary: check if user is following
       description: |-
-        This endpoint checks whether a user is already following the user
+        TCheck if a user is following another user
       security:
         - bearerAuth: []
-      operationId: checkFollowUser
+      operationId: isFollowing
       parameters:
         - in: path
-          name: username
+          name: fUsername
           required: true
-          description: username of the current user.
-          schema:
-            type: string
-            description: username
-        - in: path
-          name: followUsername
-          required: true
-          description: check whether the the current user is following the other user with followUsername.
+          description: username of the other user
           schema:
               $ref: "#/components/schemas/Followers"
       responses:
         '200':
-          description: check whether the user is following another user 
+          description: Successfully checked if a user is following another user 
           content:
             application/json:
               schema:
                 description: boolean
                 type: object
                 properties:
-                  isFollowing:
+                  checkFollow:
                     type: boolean 
-                    description: isFollowing is true if the user is following another user. Otherwise its false, if they are not already following the other user
+                    description: checkFollow is true if the current user is already following another user. If not, its false.
                     example: true
         '400':
-          description: UserID not found
+          description: Couldnt check if a user is already following another user
           content:
             application/json:
               schema:
@@ -349,7 +302,7 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "userID not found"
+                    example: "userID doesnt exist"
                   
           
   
@@ -357,26 +310,18 @@ paths:
       tags: ["follow"]
       summary: Follow a user
       description: |-
-        This endpoint allows a user to follow or unfollow another user by their userID.
-        If the user is already following the specified user, they will unfollow them, and if not, they will follow them.
+        This endpoint allows a user to follow  another user 
       security:
         - bearerAuth: []
       operationId: followUser
       parameters:
         - in: path
-          name: username
+          name: fUsername
           required: true
-          description: username of the current user
+          description: the other username the current user has searched
           schema:
             type: string
-            description: username
-        - in: path
-          name: followUsername
-          required: true
-          description: username of the person the account owner wants to follow
-          schema:
-            type: string
-            description: username that the current user wants to follow
+            description: the other username
         
       
       responses:
@@ -387,12 +332,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Follow"
         '400':
-          description: UserID not found
+          description: Failed to follow another user
           content:
             application/json:
               schema:
                 type: object
-                description: no userID found
+                description: failed following another user
                 properties:
                   error:
                     type: string
@@ -404,20 +349,13 @@ paths:
         tags: ["follow"]
         summary: Unfollow a user
         description: |-
-          This endpoint allows a user to unfollow another user by their userID. 
+          user unfollows another user. 
         security:
           - bearerAuth: []
         operationId: unfollowUser
         parameters:
           - in: path
-            name: username
-            required: true
-            description: current user's username
-            schema:
-              type: string
-              description: username
-          - in: path
-            name: followUsername
+            name: fUsername
             required: true
             description: username of the person the account owner wants to unfollow
             schema:
@@ -429,20 +367,21 @@ paths:
             content:
               application/json:
                 schema:
+                  description: user unfollowed
                   $ref: "#/components/schemas/Follow"
           '400':
-            description: UserID not found
+            description: Failed to unfollow another user
             content:
               application/json:
                 schema:
-                  description: userID not found
+                  description: unfollow user failed
                   type: object
                   properties:
                     error:
                       type: string
-                      example: "Username not found"
+                      example: "unfollow failed"
             
-  /username/{username}/ban/{banUsername}:
+  /username/{username}/ban/{bUsername}:
     get:
       tags: ["ban"]
       summary: Ban user
@@ -450,50 +389,50 @@ paths:
         This endpoint checks if the user is already banned
       security:
         - bearerAuth: []
-      operationId: checkBanUser
+      operationId: ifBan
       parameters:
         - in: path
           name: username
           required: true
           description: current user's username
           schema:
-            $ref: "#/components/schemas/Username"
+            $ref: "#/components/schemas/username"
         - in: path
-          name: banUsername
+          name: bUsername
           required: true
-          description: the username of a user the current user wants to ban
+          description: the username of the person the current user wants to ban
           schema:
-            $ref: "#/components/schemas/Username"
+            $ref: "#/components/schemas/username"
       responses:
         '200':
-          description: User banned
+          description: check if user is banned is successful
           content:
             application/json:
               schema:
-                description: check if user banned
+                description: check if a user is banned
                 type: object
                 properties:
-                  isBan:
+                  ifBan:
                     type: boolean
-                    description: isBan is either true or false. Its true if the current user has banned another user. False otherwise.
+                    description: ifBan is true if the current user has banned the other user. False if the other user isnt banned.
                     example: true
         '400':
-          description: UserID not found
+          description: Failed checking if user is banned
           content:
             application/json:
               schema:
-                description: userID not found
+                description: Check if ban failed
                 type: object
                 properties:
                   error:
                     type: string
-                    example: "UserID not found"
+                    example: "error checking if banned"
+  /ban/{bUsername}:
     post:
       tags: ["ban"]
       summary: Ban user
       description: |-
-        This endpoint allows a user to ban another user by their userID.
-        If the user is already banned, they will unban them, otherwise, they will ban them.
+        ban a user with their username.
       security:
         - bearerAuth: []
       operationId: banUser
@@ -503,36 +442,37 @@ paths:
           required: true
           description: current user's username
           schema:
-            $ref: "#/components/schemas/Username"
+            $ref: "#/components/schemas/username"
         - in: path
-          name: banUsername
+          name: bUsername
           required: true
-          description: the username of a user the current user wants to ban
+          description: the username that the current user wants to ban
           schema:
-            $ref: "#/components/schemas/Username"
+            $ref: "#/components/schemas/username"
       responses:
         '200':
-          description: User banned
+          description: User is banned
           content:
             application/json:
               schema:
+                description: user is banned
                 $ref: "#/components/schemas/Ban"
         '400':
-          description: UserID not found
+          description: failed to ban user
           content:
             application/json:
               schema:
-                description: userID not found
+                description: banning failed
                 type: object
                 properties:
                   error:
                     type: string
-                    example: "UserID not found"
+                    example: "user cant be banned"
     delete:
         tags: ["ban"]
         summary: Unban a user
         description: |-
-          This endpoint allows a user to unban another user by their userID. 
+          unban a user with their username (bUsername)
         security:
           - bearerAuth: []
         operationId: unbanUser
@@ -540,48 +480,49 @@ paths:
           - in: path
             name: username
             required: true
-            description: current username
+            description: current user's username
             schema:
-              $ref: "#/components/schemas/Username"
+              $ref: "#/components/schemas/username"
           
           - in: path
-            name: banUsername
+            name: bUsername
             required: true
-            description: username of the person the current user wants to unban
+            description: unban a user with their username, bUsername
             schema:
-              $ref: "#/components/schemas/Username"
+              $ref: "#/components/schemas/username"
         responses:
           '200':
-            description: User unbanned successfully
+            description: User is unbanned successfully
             content:
               application/json:
                 schema:
+                  description: user is unbanned
                   $ref: "#/components/schemas/Ban"
             
           '400':
-            description: UserID not found
+            description: failed to unban a user with their username
             content:
               application/json:
                 schema:
-                  description: userID not found
+                  description: unban failed
                   type: object
                   properties:
                     error:
                       type: string
-                      example: "UserID not found"
+                      example: "Error in unbanning user"
             
-  /username/{username}/profile:
+  /profile/{pUsername}:
     get:
       tags: ["user"]
-      summary: Get User Profile
+      summary: Get a user's profile
       description: |-
-        This endpoint allows you to retrieve your profile information by their userID.
+        Get users profile data
       security:
         - bearerAuth: []
       operationId: getUserProfile
       parameters:
         - in: path
-          name: username
+          name: pUsername
           required: true
           description: Username of the person trying to retrieve the profile
           schema:
@@ -594,26 +535,27 @@ paths:
  
       responses:
         '200':
-          description: User profile retrieved successfully
+          description: User profile is found.
           content:
             application/json:
               schema:
+                description: found the user profile data
                 $ref: "#/components/schemas/Profile"
                   
         
         '404':
-          description: User profile not found
+          description: failed to get user profile data
           content:
             application/json:
               schema:
-                description: Username doesnt exist
+                description: get user profile failed
                 type: object
                 properties:
                   error:
                     type: string
-                    example: "User profile not found"
+                    example: "Getting user profile failed"
 
-  /user/{userID}/stream:
+  /stream:
     get:
       tags: ["user"]
       summary: Get User's Stream
@@ -622,42 +564,32 @@ paths:
       security:
         - bearerAuth: []
       operationId: getMyStream
-      parameters:
-        - in: path
-          name: userID
-          required: true
-          description: userID of the person's stream 
-          schema:
-            type: string
-            description: userID of current user
       responses:
         '200':
-          description: User's stream acquired successfully
+          description: Got the User's stream successfully
           content:
             image/png:
                 schema:
                   $ref: "#/components/schemas/Stream"
-                  x-sort:
-                    - uploadDateTime: desc
+                  
                   
         '400':
-          description: Stream information not found
+          description: Stream failed
           content:
             application/json:
               schema:
-                description: stream not found
+                description: Cant find user stream 
                 type: object
                 properties:
                   error:
                     type: string
-                    example: "profile stream unavailable"
+                    example: "Stream failed"
           
-  /user/{userID}/photo/{photoID}/like:
+  /photo/{photoID}/like:
     post:
       tags: ["like"]
       summary: Like a Photo
-      description: |-
-        This endpoint allows a user to like a photo. If the user has already liked the photo, it will unlike the photo. The photoID is a string that uniquely identifies each photo.
+      description: User can like a photo
       security:
         - bearerAuth: []
       operationId: likePhoto
@@ -665,21 +597,14 @@ paths:
         - in: path
           name: photoID
           required: true
-          description: adding a like to a collection of likes
+          description: adding a like to a photo
           schema:
             description: photoID
             type: integer
-            example: 12
-        - in: path
-          name: userID
-          required: true
-          description: identification of the user
-          schema:
-            type: string
-            example: 123-123-123
+            example: 8
       responses:
         '200':
-          description: Photo is liked
+          description: Liked a photo
           content:
             application/json:
               schema:
@@ -687,9 +612,8 @@ paths:
 
     delete:
       tags: ["like"]
-      summary: Unlike a photo
-      description: |-
-          This allows a user to unlike a photo.
+      summary: Unlike photo
+      description: User can unlike a photo
       security:
         - bearerAuth: []
       operationId: unlikePhoto
@@ -701,129 +625,16 @@ paths:
           schema:
             description: photoID
             type: integer
-            example: 1
-        - in: path
-          name: userID
-          required: true
-          description: userID
-          schema:
-            description: userID
-            type: string
-            example: 123-123-123
-      
+            example: 5
       responses:
         '200':
-          description: Photo is unliked 
+          description: removed like on photo 
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Like"
-  /photo/{photoID}/comment:
-    get:
-      tags: ["comment"]
-      summary: get list of comments
-      description: |-
-        This endpoint allows a user to view the comments of a photo. 
-      security:
-        - bearerAuth: []
-      operationId: getComments
-      parameters:
-        - in: path
-          name: photoID
-          required: true
-          description: photoID is a unique identifier to retrieve the post in which we would like to post the comment.
-          schema:
-            description: photo identifier
-            type: integer
-            example: 1
-                
-      responses:
-        '200':
-          description: User has commented on the photo
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CommentList"  
-          
-  /user/{userID}/photo/{photoID}/comment:
-    post:
-      tags: ["comment"]
-      summary: comment on a photo
-      description: |-
-        This endpoint allows a user to write a comment on a photo. 
-      security:
-        - bearerAuth: []
-      operationId: commentPhoto
-      parameters:
-        - in: path
-          name: photoID
-          required: true
-          description: photoID is a unique identifier to retrieve the post in which we would like to post the comment.
-          schema:
-            type: integer
-            description: photoID
-            example: 12
-        - in: path
-          name: userID
-          required: true
-          description: userID of the person who comments on a photo
-          schema:
-            description: userID
-            type: string
-            example: 123-123-123
-      requestBody:
-        description: Here we comment on the photo according to the photoID given as parameter. 
-        content:
-          application/json:
-            schema:
-              description: return comment
-              type: object
-              properties:
-                comment:
-                  type: string
-                  example: "cool pic"                
-                  pattern: 'ˆ.*?$'
-                  minLength: 1
-                  maxLength: 1000
-                
-      responses:
-        '200':
-          description: User has commented on the photo
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Comment"
-                  
-        
-  /uncomment/{commentID}:       
-    delete:
-      tags: ["comment"]
-      summary: Uncomment on a photo
-      description: |-
-          This allows a user to uncomment on a photo using the commentID.
-      security:
-        - bearerAuth: []
-      operationId: uncommentPhoto
-      parameters:
-        - in: path
-          name: commentID
-          required: true
-          description: commentID is the identifier for a comment 
-          schema:
-            description: commentID
-            type: integer
-            example: 1        
-      responses:
-        '200':
-          description: comment deleted
-          content:
-            application/json:
-              schema:
-                type: object 
-                description: comment is deleted
-                
-          
-  /photo/{photoID}/remove:
+
+  /photo/{photoID}:
     delete:
       tags: ["photo"]
       summary: Delete a Photo
@@ -867,17 +678,106 @@ paths:
                   error:
                     type: string
                     example: "photoID not found"
+    get:
+      tags: ["comment"]
+      summary: get all comments from a photo
+      description: User may view the comments of a photo
+      security:
+        - bearerAuth: []
+      operationId: getComments
+      parameters:
+        - in: path
+          name: photoID
+          required: true
+          description: photoID is the identifier of a photo.
+          schema:
+            description: photo identifier
+            type: integer
+            example: 1
+                
+      responses:
+        '200':
+          description: comments are found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comments"  
+    post:
+      tags: ["comment"]
+      summary: comment on a photo
+      description: |-
+        This endpoint allows a user to write a comment on a photo. 
+      security:
+        - bearerAuth: []
+      operationId: commentPhoto
+      parameters:
+        - in: path
+          name: photoID
+          required: true
+          description: photoID is the identfier for a photo.
+          schema:
+            type: integer
+            description: photoID
+            example: 6
+      requestBody:
+        description: the comment that we want post on a photo. 
+        content:
+          application/json:
+            schema:
+              description: The comment
+              type: object
+              properties:
+                comment:
+                  type: string
+                  example: "i like the photo a lot"                
+                  pattern: 'ˆ.*?$'
+                  minLength: 1
+                  maxLength: 100000
+                
+      responses:
+        '200':
+          description: Comment uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        
+  /comment/{commentID}:       
+    delete:
+      tags: ["comment"]
+      summary: Uncomment on a photo
+      description: User may delete their own comment
+      security:
+        - bearerAuth: []
+      operationId: uncommentPhoto
+      parameters:
+        - in: path
+          name: commentID
+          required: true
+          description: commentID is the comment identfier.
+          schema:
+            description: commentID
+            type: integer
+            example: 4      
+      responses:
+        '200':
+          description: comment is removed
+          content:
+            application/json:
+              schema:
+                type: object 
+                description: comment is gone
+                
+          
                 
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      description: |-
-        App session token value. This value is sent by the server in the login
-        and session refresh APIs.
+      description: This is a token generated in the login page. This token acts as a user authentication
   schemas:
-    Username:
+    username:
       type: object
       description: user's username
       properties:
@@ -904,18 +804,18 @@ components:
           
         followCount:
           type: integer
-          description: Amount of followers following the user.
-          example: 24
+          description: Number of followers following the user.
+          example: 10
 
-        following: 
+        followingCount: 
           type: integer
-          description: Amount of followers the user is following
-          example: 24
+          description: Number of followers the user is following
+          example: 10
           
         photoCount:
           type: integer
-          description: Amount of photos the user has posted
-          example: 24
+          description: Number of photos the user has posted
+          example: 10
           
     PhotoList:
       type: object
@@ -923,43 +823,39 @@ components:
       properties:
         uploadedPhotos:
           type: array
-          description: user's photos in reverse chronological order.
+          description: photos in reverse chronological order.
           minItems: 0
-          maxItems: 9999999
+          maxItems: 10000000
           items: 
             type: object
             description: A photo
             properties:
               photoID: 
                 type: integer
-                description: the unique identifier for a photo
-                minLength: 3
-                maxLength: 500
-                example: 1
+                description: the unique identifier of photo
+                example: 3
         
               userID:
                 type: string
                 description: user identifier
                 minLength: 10
                 maxLength: 80
-                example: 123-123-123
+                example: 122131313
                 pattern: '^.*?$'
 
-                                 
-
-              photo:
+              photoFile:
                 type: string
                 format: binary
                 minLength: 1
                 maxLength: 100000
                 
-              like_count:
+              likeCount:
                 type: integer
-                description: The number of likes of the photo.
+                description: The number of likes on photo.
                 example: 22
-              comment_count:
+              commentCount:
                 type: integer
-                description: The number of comments of a photo.
+                description: The number of comments on photo.
                 example: 22
               date:
                 type: string
@@ -976,7 +872,7 @@ components:
                 minLength: 3
                 maxLength: 16
                 description: the username
-              isLiked:
+              ifLike:
                 type: boolean
                 example: true
                 description: check whether the current user has liked the photo
@@ -989,41 +885,41 @@ components:
               
     Photo:
       type: object
-      description: A photo
+      description: photo Data
       properties:
         photoID: 
           type: integer
           description: the unique identifier for a photo
-          example: 1
+          example: 4
         userID:
           type: string
           description: user identifier
           minLength: 10
-          maxLength: 80
-          example: 123-123-123
+          maxLength: 100000
+          example: jl2j3l41j3132
           pattern: '^.*?$'
-        photo:
+        photoFile:
           type: string
           format: binary
+          example: 1010100101
           minLength: 1
           maxLength: 100000
-          
-        like_count:
+        likeCount:
           type: integer
-          description: The number of likes of the photo.
+          description: The number of likes on the photo.
           example: 22
-        comment_count:
+        commentCount:
           type: integer
-          description: The number of comments of a photo.
+          description: The number of comments on the photo.
           example: 22
         date:
           type: string
           format: date-time
           minLength: 20
-          maxLength: 21
-          description: the date and time when the photo is uploaded.
+          maxLength: 100
+          description: the date and time of the photo posted.
           pattern: '^.*?$'
-          example: 2021-05-10T06:11:09Z
+          example: 2018-02-08T06:08:02Z
         username:
           type: string
           example: Maria
@@ -1031,113 +927,112 @@ components:
           minLength: 3
           maxLength: 16
           description: the username
-        isLiked:
+        ifLike:
           type: boolean
           example: true
-          description: check whether the current user has liked the photo
+          description: check whether a photo is liked. True if its liked, false if its not liked.
           
 
 
     Stream:
       type : object
-      description : stream of photos of the users the user follows.
+      description : stream of photos found
       properties :
         photos: 
-          description: list of the photos
+          description: array of photos from users that the current user follows
           type: array
           minItems: 0
-          maxItems: 10000000
+          maxItems: 100000000000
           items:
             type: object
             properties:
               photoID: 
-                description:  the photo identifier.
+                description:  the identifier for a photo.
                 type: integer
-                example: 12
+                example: 1
            
               userID:
                 description:  user identifier of the photo posted by a user.
                 type: string
                 pattern: '^.*?$'
-                example: "123-123-123" 
-                minLength: 10
-                maxLength: 80
+                example: kjhkjewhr123213
+                minLength: 1
+                maxLength: 100000
                 
               username:
                 description: username.
                 type: string
                 pattern: '^.*?$'
-                example: shireen123
+                example: Nata1
                 minLength: 3
                 maxLength: 16
+
                 
               likeCount:
-                description: amount of likes on the a photo.
+                description: Number of likes on photo
                 type: integer
                 example: 32
-                minimum: 0
-                maximum: 100000
                 
               commentCount:
-                description: amount of comments on a photo.
+                description: Number of comments on photo.
                 type: integer
-                example: 0
-                minimum: 0
-                maximum: 9939
+                example: 2
+
                 
   
-              isLiked:
-                description: check whether the current user liked the photo
+              ifLike:
+                description: check whether the user has like a photo
                 type: boolean
                 example: false
 
               date:
-                description: date of when the photo was uploaded
+                description: date and time of when the photo was posted
                 type: string
                 format: date-time
-                example: "2021-06-06T02:01:01Z"
-                minLength: 20
-                maxLength: 40
+                example: "2021-06-06T02:03:08Z"
+                minLength: 10
+                maxLength: 100
                 
-              document: 
-                description: the photo file. PNG or JPEG file
+              photoFile: 
+                description: the photo file
                 type: string
                 format: binary
+                example: 1010101010111010101
                 minLength: 3
-                maxLength: 100
+                maxLength: 1000000
                 
 
               
     Follow:
       type: object
-      description: The userID of someone the current user would like to follow
+      description: successfully followed a user
       properties:
         followID:
           type: string
           minLength: 3
           maxLength: 50
           pattern: '^.*?$'
-          description: The userID of the person you would like to follow
-          example: "123-123-123"
+          description: The identifier of follow.
+          example: 2
   
     Followers:
       type: object
-      description: the followers or followings of the user
+      description: the users followers
       properties:
         followers:
           type: array
           minLength: 0
           maxLength: 100000
-          description: a list of all the followers of the user
+          description: all the users that are following the current user in an array
           items:
             type: object
-            description: the username of a user that follows the current user or that the current user follows. 
+            description: the username of the users that follow the current user
             properties:
               username:
                 description: username.
                 type: string
                 pattern: '^.*?$'
-                example: shireen123
+                example: nata1
                 minLength: 3
                 maxLength: 16
                 
@@ -1151,17 +1046,17 @@ components:
           minLength: 3
           maxLength: 50
           pattern: '^.*?$'
-          description: The userID that the current user will ban 
-          example: "123-123-123"
+          description: The ban identifier
+          example: 3
 
     Like:
       type: object
-      description: a like on a photo
+      description: added a like to a photo
       properties:
         likeID: 
-          type: string
+          type: integer
           description: the like identifier.
-          example: "123-123-123"
+          example: 3
           
     Comment:
       type: object
@@ -1172,10 +1067,10 @@ components:
           description: A unique comment identifier
           pattern: '^.*?$'
           minLength: 2
-          maxLength:  50
-          example: "123-123-123"
+          maxLength:  100
+          example: "122131313"
 
-        commentUser:
+        commentUsername:
           type: string
           description: the username of the person who commented 
           pattern: '^.*?$'
@@ -1183,33 +1078,33 @@ components:
           maxLength: 16
           example: "shireen123" 
           
-        text:
+        comment:
           type: string
-          description: the comment as a string
+          description: the comment posted by user
           pattern: '^.*?$'
           minLength: 1
-          maxLength: 3000
-          example: nice pic
+          maxLength: 30000
+          example: "love ittt"
 
 
         photoID: 
-          description:  the photo identifier.
+          description: the photo identifier.
           type: integer
           example: 12
 
-        photoUser:
+        photoUsername:
           type: string
-          description: the username of the person who posted the photo
+          description: the username of the user who posted a photo
           pattern: '^.*?$'
           minLength: 3
           maxLength: 16
-          example: "shireen123" 
+          example: "natalia" 
 
-    CommentList:
+    Comments:
       type: object
-      description: list of comments on the photo
+      description: all the comments posted on a  photo in an array list
       properties:
-        uploadedPhotos:
+        Comments:
           type: array
           description: list of comments on a photo 
           minItems: 0
@@ -1222,18 +1117,16 @@ components:
                 type: integer
                 example: 12
               comment:
-                description: the comment posted on the photo
+                description: Users comment
                 type: string
                 pattern: '^.*?$'
-                example: nice pic 
+                example: "Cute picture"
                 minLength: 3
                 maxLength: 10000
               username:
-                description: the username of the person who wrote the comment on the photo
+                description: the current username
                 type: string
                 pattern: '^.*?$'
-                example: shireen12 
+                example: natalia1 
                 minLength: 3
                 maxLength: 16
-                
-      
