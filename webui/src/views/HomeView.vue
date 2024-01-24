@@ -5,6 +5,7 @@ export default {
       userID: localStorage.getItem("userID"),
       username: localStorage.getItem("username"),
       errormsg: null,
+      streamSize:0,
       streamList: [
         {
           photoID: "",
@@ -40,7 +41,8 @@ export default {
           }
         });
         this.streamList = response.data;
-
+        this.streamSize= this.streamList.length;
+        console.log("length:" + this.streamSize.length)
         console.log(response.data);
 
         for (let i = 0; i < this.streamList.length; i++) {
@@ -122,7 +124,7 @@ export default {
 
   <div class="card-columns">
     <br /><br />
-    <div class="card-columns">
+    <div class="card-columns" v-if="this.streamSize>0">
       <div v-for="photo in this.streamList" :key="photo.photoID">
         <div class="card" style="width: 300px; height: 460px">
           <img
@@ -200,7 +202,7 @@ export default {
               <b>
                 date: {{ photo.date }}<br />
                 comments: {{ photo.commentCount }}<br />
-              </b>{" "}
+              </b>
             </p>
 
             <div class="input-group mb-2">
