@@ -39,7 +39,7 @@ func (db *appdbimpl) GetPhotoCount(userID string) (int, error) {
 	return count, nil
 }
 
-func (db *appdbimpl) GetPhotos(picture Photos) ([]Photos, error) {
+func (db *appdbimpl) GetPhotos(picture Photos, userID string) ([]Photos, error) {
 	var photo []Photos
 	rows, err := db.c.Query("SELECT photoID, userID, date, photo FROM photos WHERE username = ? ORDER BY date DESC", picture.PUsername)
 	if err != nil {
@@ -60,7 +60,7 @@ func (db *appdbimpl) GetPhotos(picture Photos) ([]Photos, error) {
 		if err != nil {
 			return nil, err
 		}
-		err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM likes WHERE userID=? AND photoID=?)", picture.UserID, picture.PhotoID).Scan(&picture.IfLiked)
+		err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM likes WHERE userID=? AND photoID=?)", userID, picture.PhotoID).Scan(&picture.IfLiked)
 		if err != nil {
 			return nil, err
 		}

@@ -1,18 +1,18 @@
 /*
 Package database is the middleware between the app database and the code. All data (de)serialization (save/load) from a
-persistent database are handled here. Database specific logic should never escape this package.
+persistent database are handled here. Database-specific logic should never escape this package.
 
-To use this package you need to apply migrations to the database if needed/wanted, connect to it (using the database
+To use this package, you need to apply migrations to the database if needed/wanted, connect to it (using the database
 data source name from config), and then initialize an instance of AppDatabase from the DB connection.
 
 For example, this code adds a parameter in webapi executable for the database data source name (add it to the
 main.WebAPIConfiguration structure):
 
 	DB struct {
-		Filename string conf:""
+		Filename string `conf:""`
 	}
 
-This is an example on how to migrate the DB and connect to it:
+This is an example of how to migrate the DB and connect to it:
 
 	// Start Database
 	logger.Println("initializing database support")
@@ -36,7 +36,7 @@ import (
 	"fmt"
 )
 
-// AppDatabase is the high level interface for the DB
+// AppDatabase is the high-level interface for the DB
 type AppDatabase interface {
 	BanUser(ban Bans) error
 	UnBanUser(ban Bans) error
@@ -53,16 +53,16 @@ type AppDatabase interface {
 	GetUserFollowers(username string) ([]string, error)
 	GetUserFollowings(username string) ([]string, error)
 
-	LikePhoto(like Likes) (Likes, error)
+	LikePhoto(like Likes) error
 	UnlikePhoto(like Likes) error
 	IfLike(like Likes) (bool, error)
 
 	UploadPhoto(picture Photos) error
 	DeletePhoto(p Photos) error
 	GetPhotoCount(userID string) (int, error)
-	GetPhotos(picture Photos) ([]Photos, error)
+	GetPhotos(picture Photos, userID string) ([]Photos, error)
 
-	GetStream(username string) ([]Stream, error)
+	GetStream(username string, userID string) ([]Stream, error)
 	LogUser(user Users) (string, error)
 	SetNewUsername(username string, userID string) (string, error)
 
@@ -87,9 +87,9 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building a AppDatabase")
 	}
 
-	// Check if table exists. If not, the database is empty, and we need to create the structure
+	// Check if the table exists. If not, the database is empty, and we need to create the structure
 	var tableName string
-	err := db.QueryRow(SELECT name FROM sqlite_master WHERE type='table' AND name='users';).Scan(&tableName)
+	err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='users';").Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) {
 		userData := `CREATE TABLE IF NOT EXISTS users (
 			ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -100,7 +100,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error creating user database structure: %w", err)
 		}
-		followData := `CREATE TABLE follows (
+		followData := `CREATE TABLE IF NOT EXISTS follows (
 			followID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			username TEXT NOT NULL UNIQUE,
 			fUsername TEXT NOT NULL UNIQUE
@@ -110,7 +110,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
 		}
 
-		photoData := `CREATE TABLE photos (
+		photoData := `CREATE TABLE IF NOT EXISTS photos (
 			photoID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			userID TEXT NOT NULL ,
 			username TEXT NOT NULL ,
@@ -124,7 +124,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
 		}
 
-		banData := `CREATE TABLE bans (
+		banData := `CREATE TABLE IF NOT EXISTS bans (
 			banID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			username TEXT NOT NULL UNIQUE,
 			bUsername TEXT NOT NULL
@@ -133,7 +133,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
 		}
-		commentData := `CREATE TABLE comments (
+		commentData := `CREATE TABLE IF NOT EXISTS comments (
 			commentID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			userID TEXT NOT NULL,
 			username TEXT NOT NULL,
@@ -147,7 +147,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
 		}
 
-		likeData := `CREATE TABLE likes (
+		likeData := `CREATE TABLE IF NOT EXISTS likes (
 			likeID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			userID TEXT NOT NULL,
 			photoID INTEGER NOT NULL,
@@ -158,7 +158,6 @@ func New(db *sql.DB) (AppDatabase, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
 		}
-
 	}
 
 	return &appdbimpl{

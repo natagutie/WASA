@@ -14,7 +14,7 @@ const router = createRouter({
 		{path: '/session', component: HomeView},
 		{path: '/search', component: SearchView},
 		{path: '/home', component: HomeView},
-		{path: '/user/:username/account', component: AccountViewer},
+		{path: '/account/:username', component: AccountViewer},
 		{path: '/profile', component: ProfileView},
 	]
 })

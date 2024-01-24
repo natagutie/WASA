@@ -75,10 +75,9 @@ func (rt *_router) getUserPhotos(w http.ResponseWriter, r *http.Request, ps http
 	userID := getUserToken(r.Header.Get("Authorization"))
 	pUsername := ps.ByName("photoUsername")
 	var p database.Photos
-	p.UserID = userID
 	p.PUsername = pUsername
 
-	pictures, err := rt.db.GetPhotos(p)
+	pictures, err := rt.db.GetPhotos(p, userID)
 	if err != nil {
 		http.Error(w, "cannot get the photo list", http.StatusBadRequest)
 		return

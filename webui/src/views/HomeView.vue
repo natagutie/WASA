@@ -1,228 +1,245 @@
 <script>
 export default {
-	data: function() {
-		return {
-			userID:"",
-			userUsername:"",
-
-			photos:[{
-                photoID:0,
-                username:"",
-                like_count:0,
-                comment_count:0,
-                date:"",
-                photo: "",
-                isLiked:true,
-                comment: "",
-				followed_username:"",
-
-                }
-            ],
-			    comments:[{
-                    commentID:0,
-                    commentUser: "",
-                    comment:"",
-
-                    }],
-		}
-	},
-	created(){
-		this.userID=localStorage.getItem("userID");
-
-		this.getStream();
-		
-	},
-	methods: {
-		async getStream() {
-
-			try {
-				this.userID=localStorage.getItem("userID");
-				this.userUsername= localStorage.getItem("username");
-
-				let response = await this.$axios.get("/user/" + this.userID + "/stream", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-				this.photos=response.data;
-
-
-                for (let i=0;i<this.photos.length;i++){   
-                    this.photos[i].photo= 'data:image/png;base64,'+ this.photos[i].photo;    
-                }
-
-			} catch (e) {
-			}
-			this.loading = false;
-		},
-	async getComments(photoID) {
-        let response=await this.$axios.get("/photo/" + photoID +"/comment", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-        this.comments=response.data;
-        var modal = document.getElementById("commentModal");
-        modal.style.display = "block";
-    },
-    async closeModal() {
-        var modal = document.getElementById("commentModal");
-
-        modal.style.display = "none";
-    },
-
-	async deleteComment(commentID, photoID) {
-        let response=await this.$axios.delete("/uncomment/"+commentID, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-        
-        
-        this.getStream();
-        this.getComments(photoID);
-    
-    },
-
-	async LikePhoto(photoID){
-
-        let response=await this.$axios.post("/user/" + this.userID + "/photo/" + photoID +"/like", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
+  data: function() {
+    return {
+      userID: localStorage.getItem("userID"),
+      username: localStorage.getItem("username"),
+      errormsg: null,
+      streamList: [
+        {
+          photoID: "",
+          likeCount: "",
+          comment: "",
+          username: "",
+          commentCount: "",
+          date: "",
+          photo: "",
+          ifLike: false,
+          text: "",
+          fUsername: ""
+        }
+      ],
+      commentList: [
+        {
+          commentID: 0,
+          commentUser: "",
+          comment: ""
+        }
+      ]
+    };
+  },
+  created() {
+    this.getMyStream();
+  },
+  methods: {
+    async getMyStream() {
+      try {
+        let response = await this.$axios.get("/stream", {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("userID")
+          }
         });
-    this.getStream();
-    
-	},
+        this.streamList = response.data;
+        console.log(response.data);
 
-	async unLikePhoto(photoID){
-	let response=await this.$axios.delete("/user/" + this.userID + "/photo/" + photoID +"/like", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
+        for (let i = 0; i < this.streamList.length; i++) {
+          this.streamList[i].photo =
+            "data:image/png;base64," + this.streamList[i].photoFile;
+        }
+      } catch (e) {
+        this.errormsg = e.toString();
+      }
+    },
+    async getUserComments(photoID) {
+      let response = await this.$axios.get("/photo/" + photoID, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID")
+        }
+      });
 
-	this.getStream();
-	},
+      // Assuming commentList is an array
+      this.commentList = response.data.map(comment => ({
+        commentID: comment.commentID,
+        photoID: comment.photoID,
+        comment: comment.comment,
+        username: comment.username
+      }));
 
-	async uploadComment(photoID,yuhcomment){
-           
-           let response=await this.$axios.post("/user/" + this.userID + "/photo/" + photoID +"/comment", { comment: yuhcomment }, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-           this.getStream();
-	},
+      var modal = document.getElementById("commentPopUp");
+      modal.style.display = "block";
+    },
+    async RemoveComment(photoID, commentID) {
+      await this.$axios.delete("/comment/" + commentID, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID")
+        }
+      });
+      this.getUserComments(photoID);
+      this.getMyStream();
+    },
+    async close() {
+      var modal = document.getElementById("commentPopUp");
+      modal.style.display = "none";
+    },
+    async LikePicture(photoID) {
+      await this.$axios.post("/photo/" + photoID + "/like", {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID")
+        }
+      });
+      this.getMyStream();
+    },
+    async unLikePicture(photoID) {
+      let response = await this.$axios.delete("/photo/" + photoID + "/like", {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID")
+        }
+      });
 
-	async refresh() {
-        this.getPhotos();
-		this.getComments();
-		
-	},
-	
-},
-	
-}
+      this.getMyStream();
+    },
+    async InsertComment(photoID, text) {
+      await this.$axios.post(
+        "/photo/" + photoID,
+        { comment: text },
+        {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("userID")
+          }
+        }
+      );
+      this.getMyStream();
+    }
+  }
+};
 </script>
 
 <template>
+  <br /><br />
+  <h2>Home</h2>
+  <br />
 
-	<h2 class="h22">My STREAM</h2>
-			
+  <div class="card-columns">
+    <br /><br />
+    <div class="card-columns">
+      <div v-for="photo in this.streamList" :key="photo.photoID">
+        <div class="card" style="width: 300px; height: 460px">
+          <img
+            class="card-img-top"
+            :src="photo.photo"
+            alt="error in showing photo"
+            style="width=300px; height: 180px"
+          />
+          <h5><b> {{ photo.fUsername }}</b></h5>
+          <div class="card-body">
+            <button
+              class="btn "
+              v-if="photo.ifLike == true"
+              @click="unLikePicture(photo.photoID)"
+            >
+              {{ photo.likeCount }}
+            </button>
+            <button
+              class="btn"
+              v-if="photo.ifLike == false"
+              @click="LikePicture(photo.photoID)"
+            >
+              {{ photo.likeCount }}
+            </button>
+            <br /><button
+              class="btn"
+              @click="getUserComments(photo.photoID)"
+            >
+              Comments
+            </button>
 
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></head>
-  
-    
-
-<div class="container">
-	<div class="card-columns">
-		<div v-for="photo in this.photos" style="width=300px" v-bind:key="photo.photoID">
-			<div class="card" style="width: 300px; height: 500px">
-				<RouterLink :to="'user/' + photo.followed_username + '/account'" class="nav-link">
-				<img class="card-img-top" :src=photo.photo  alt="unavailable"  style="width=300px; height: 150px" >
-			</RouterLink>
-				<hr>
-				<div class="card-body">
-					<h6>{{ photo.followed_username }}</h6>
-				<br>
-				<button class="fa fa-heart-o" v-if="photo.isLiked==true" @click="this.unLikePhoto(photo.photoID)" :color="red"> {{ photo.like_count }}</button>
-				<button class="fa fa-heart-o"  v-if="photo.isLiked==false" @click="this.LikePhoto(photo.photoID)" :color="green"> {{ photo.like_count }}</button>
-
-				<button  @click="getComments(photo.photoID)"> comments</button>
-
-
-
-<div class="modal " id="commentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable" role="document">
-        <div class="modal-content">
-            <span @click="closeModal" class="close">&times;</span>
-        
-            <div class="modal-header">
-                <h5 class="modal-title">Comments</h5>
-            </div>
-            
-            <div class="modal-body">
-                <div v-for="comment in this.comments" v-bind:key="comment.commentID">
-                <p> <b>{{ comment.username }}  </b> {{ comment.comment }} </p>
-                <button v-if="comment.username==this.userUsername" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, comment.photoID)">Delete</button>
-                <br>
+            <div
+              class="modal "
+              id="commentPopUp"
+              tabindex="-1"
+              role="dialog"
+              aria-labelledby="exampleModalScrollableTitle"
+            >
+              <div
+                class="modal-dialog modal-dialog-scrollable"
+                role="document"
+              >
+                <div class="modal-content">
+                  <span @click="close" class="close">&times;</span>
+                  <div class="modal-header">
+                    <h7 class="modal-title" style="color: #da91f1">Comments</h7>
+                  </div>
+                  <div class="modal-body">
+                    <div
+                      v-for="comment in this.commentList"
+                      :key="comment.commentID"
+                    >
+                      <h6>
+                        <b>{{ comment.username }}</b> {{ comment.comment }}
+                      </h6>
+                      <button
+                        v-if="comment.username == this.username"
+                        type="button"
+                        class="btn"
+                        style="float: right;"
+                        @click="RemoveComment(
+                          comment.photoID,
+                          comment.commentID
+                        )"
+                      >
+                        Delete
+                      </button>
+                      <br />
+                    </div>
+                  </div>
                 </div>
+              </div>
             </div>
+            <p>
+              <b>
+                date: {{ photo.date }}<br />
+                comments: {{ photo.commentCount }}<br />
+              </b>{" "}
+            </p>
+
+            <div class="input-group mb-2">
+              <input
+                type="text"
+                style="width: 200px"
+                v-model="photo.text"
+                class="form-control"
+                placeholder="comment here!"
+              />
+              <div class="input-group-append">
+                <button
+                  class="btn"
+                  style="height: 50px"
+                  @click="InsertComment(photo.photoID, photo.text)"
+                >
+                  post
+                </button>
+              </div>
+            </div>
+            <br />
+          </div>
         </div>
+      </div>
     </div>
-</div>
-
-				<br>
-				<br>
-				<p > likes: {{ photo.like_count }}<br>
-				comments: {{ photo.comment_count }}<br>
-				 date: {{ photo.date }}</p>
-
-				 <div class="gro">
-                    <input type="text" id="comment" v-model="photo.comment" class="form-control" placeholder="input comment">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-dark" type="button" @click="uploadComment(photo.photoID, photo.comment)">post</button>
-                        </div>
-                    </div><br>
-				</div>
-			
-			</div>
-
-		</div>
-	</div>
-	
-	 
- </div>
- 
-
-	
+  </div>
 </template>
 
 <style>
-
-
-
-
-
-.fa-heart-o {
-  color: rgb(255, 255, 255);
-  background-color: rgb(209, 161, 210);
+.btn {
+  color: black;
   cursor: pointer;
-  height: 27px;
+  background-color: pink;
 }
 
+.card {
+  border-color: pink;
+}
 
-
-
-
-
-
-
-
-
+.modal-body {
+  background-color: pink;
+}
 </style>

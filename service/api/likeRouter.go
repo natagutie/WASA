@@ -20,12 +20,18 @@ func (rt *_router) unlikePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 
 	like.UserID = userID
 	like.PhotoID = photoID
-
-	err = rt.db.UnlikePhoto(like) // If user already liked the photo, then we remove the like
+	likeStatus, err := rt.db.IfLike(like)
 	if err != nil {
-		http.Error(w, "remove like failed", http.StatusBadRequest)
-		return
+		http.Error(w, "couldnt check like status", http.StatusBadRequest)
 	}
+	if likeStatus {
+		err = rt.db.UnlikePhoto(like) // If user already liked the photo, then we remove the like
+		if err != nil {
+			http.Error(w, "remove like failed", http.StatusBadRequest)
+			return
+		}
+	}
+
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
@@ -41,11 +47,18 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 	like.UserID = userID
 	like.PhotoID = photoID
 
-	_, err = rt.db.LikePhoto(like)
+	likeStatus, err := rt.db.IfLike(like)
 	if err != nil {
-		http.Error(w, "couldnt check if its liked", http.StatusBadRequest)
-		return
+		http.Error(w, "couldnt check like status", http.StatusBadRequest)
 	}
+	if !likeStatus {
+		err = rt.db.LikePhoto(like)
+		if err != nil {
+			http.Error(w, "couldnt check if its liked", http.StatusBadRequest)
+			return
+		}
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 }

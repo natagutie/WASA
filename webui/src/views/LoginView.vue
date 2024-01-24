@@ -18,7 +18,7 @@ export default {
                     let response = await this.$axios.post("/session", { username: this.username })
                     this.userID = response.data;
                     localStorage.setItem("userID", this.userID);
-                    this.$axios.defaults.headers.common['Authorization']= Bearer ${localStorage.getItem("userID") };
+                    this.$axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem("userID")}`;
                     localStorage.setItem("username", this.username);
                     this.$router.push({ path: '/session' })
                 } catch (e) {

@@ -1,6 +1,6 @@
 package database
 
-func (db *appdbimpl) GetStream(username string) ([]Stream, error) {
+func (db *appdbimpl) GetStream(username string, userID string) ([]Stream, error) {
 
 	rows, err := db.c.Query("SELECT p.photoID, p.userID, p.photo, p.username, p.date FROM photos p INNER JOIN follows f ON p.username = f.fUsername WHERE f.username = ? ORDER BY p.date DESC", username)
 
@@ -28,7 +28,7 @@ func (db *appdbimpl) GetStream(username string) ([]Stream, error) {
 			return nil, err
 		}
 
-		err = db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM likes WHERE userID=? AND photoID=?)", stream.UserID, stream.PhotoID).Scan(&stream.IfLike)
+		err = db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM likes WHERE userID=? AND photoID=?)", userID, stream.PhotoID).Scan(&stream.IfLike)
 		if err != nil {
 			return nil, err
 		}

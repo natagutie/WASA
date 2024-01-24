@@ -21,7 +21,7 @@ func (rt *_router) getMyStream(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	myStream, err := rt.db.GetStream(username)
+	myStream, err := rt.db.GetStream(username, userID)
 	if err != nil {
 		http.Error(w, "couldnt get the users stream", http.StatusBadRequest)
 		return

@@ -1,289 +1,269 @@
 <script>
 export default {
-    data: function () {
-        return {
-            errormsg: null,
-            ifPhotos: false,
-            Username: localStorage.getItem("username"),
-            newUsername: "",
-            userID: localStorage.getItem("userID"),
-            filePic: "",
-            followersList: [],
-            followingsList: [],
-            bansList: [],
-            comment:"",
+  data: function () {
+    return {
+      errormsg: null,
+      ifPhotos: false,
+      Username: localStorage.getItem("username"),
+      newUsername: "",
+      userID: localStorage.getItem("userID"),
+      filePic: "",
+      followersList: [],
+      followingsList: [],
+      bansList: [],
+      comment: "",
 
-            followerCount: null,
-            followingCount: null,
+      followerCount: null,
+      followingCount: null,
 
-            banCount: null,
-            pictureCount: null,
-            commentList: [{
-                commentID: "",
-                username: "",
-                photoID:"",
-                comment: "",
+      banCount: null,
+      pictureCount: null,
+      commentList: [
+        {
+          commentID: "",
+          username: "",
+          photoID: "",
+          comment: "",
+        },
+      ],
 
-            }],
+      photoList: [
+        {
+          photoID: "",
+          likeCount: "",
+          comment: "",
+          username: "",
+          commentCount: "",
+          date: "",
+          photo: "",
+          ifLiked: false,
+          text: "",
+        },
+      ],
+    };
+  },
 
+  created() {
+    this.dataAccount();
+  },
 
-            photoList: [{
-                photoID: "",
-                likeCount: "",
-                comment: "",
-                username: "",
-                commentCount: "",
-                date: "",
-                photo: "",
-                ifLiked: false,
-                text: "",
+  methods: {
+    async getUserComments(photoID) {
+      let response = await this.$axios.get("/photo/" + photoID, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID"),
+        },
+      });
 
-            }
-            ],
-        }
+      // Assuming commentList is an array
+      this.commentList = response.data.map((comment) => ({
+        commentID: comment.commentID,
+        photoID: comment.photoID,
+        comment: comment.comment,
+        username: comment.username,
+      }));
+
+      var modal = document.getElementById("commentPopUp");
+      modal.style.display = "block";
     },
 
-    created() {
+    async RemoveComment(photoID, commentID) {
+      await this.$axios.delete("/comment/" + commentID, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID"),
+        },
+      });
+
+      this.dataAccount();
+      this.getUserPhotos();
+      this.getUserComments(photoID);
+    },
+
+    async dataAccount() {
+      try {
+        this.Username = localStorage.getItem("username");
+        this.userID = localStorage.getItem("userID");
+        let response = await this.$axios.get("/profile/" + this.Username, {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("userID"),
+          },
+        });
+
+        this.banCount = response.data.banCount;
+        this.bansList = response.data.bansList;
+        this.followingCount = response.data.followingCount;
+        this.pictureCount = response.data.photoCount;
+        this.followerCount = response.data.followerCount;
+
+        if (this.pictureCount > 0) {
+          this.getUserPhotos();
+          this.ifPhotos = true;
+        }
+      } catch (e) {
+        this.errormsg = e.toString();
+      }
+    },
+
+    async GetFollowingList() {
+      try {
+        let response = await this.$axios.get("/followings", {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("userID"),
+          },
+        });
+        this.followingsList = response.data;
+        var modal = document.getElementById("followingPopUp");
+        modal.style.display = "block";
+      } catch (e) {
+        this.errormsg = e.toString();
+      }
+    },
+
+    close() {
+      var modal = document.getElementById("commentPopUp");
+
+      var followingPopUp = document.getElementById("followingPopUp");
+      var banPopUp = document.getElementById("banPopUp");
+      var followPopUp = document.getElementById("followPopUp");
+
+      followingPopUp.style.display = "none";
+      banPopUp.style.display = "none";
+      followPopUp.style.display = "none";
+
+      modal.style.display = "none";
+    },
+    async TheFollowers() {
+      let response = await this.$axios.get("/followers", {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID"),
+        },
+      });
+      this.followersList = response.data;
+      var modal = document.getElementById("followPopUp");
+      modal.style.display = "block";
+    },
+    async GetBansList() {
+      try {
+        var modal = document.getElementById("banPopUp");
+        modal.style.display = "block";
+      } catch (e) {
+        this.errormsg = "cant get ban List";
+      }
+    },
+
+    async changeUsername() {
+      if (this.newUsername == "") {
+        this.errormsg = "The new username cant be empty!!!";
+      } else if (this.newUsername == this.Username) {
+        this.errormsg = "The new username cant be the same as your current";
+      } else {
+        try {
+          let response = await this.$axios.put(
+            "/username/" + this.newUsername,
+            {},
+            {
+              headers: {
+                Authorization: "Bearer " + this.userID,
+              },
+            }
+          );
+          this.Username = response.data;
+          localStorage.setItem("username", this.Username);
+        } catch (e) {
+          this.errormsg = "Error updating username";
+        }
+      }
+    },
+    async InsertPic() {
+      try {
+        console.log("pls work");
+        const aFile = this.$refs.picFile.files[0];
+        console.log(aFile);
+
+        let response = await this.$axios.post(
+          "/photo",
+          aFile,
+          {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("userID"),
+            },
+          }
+        );
+
         this.dataAccount();
+      } catch (e) {
+        this.errormsg = e.toString();
+      }
     },
-
-    methods: {
-
-        async getUserComments(photoID) {
-            let response = await this.$axios.get("/photo/" + photoID, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-            
-            for (let i = 0; i < this.commentList.length; i++) {
-            this.commentList[i].commentID = response.data[0].commentID;
-            this.commentList[i].photoID = response.data[0].photoID;
-            this.commentList[i].comment = response.data[0].comment;
-            this.commentList[i].username = response.data[0].username;
-
-            console.log(this.commentList[i].photoID);
-            console.log(this.commentList[i].commentID);
-        }
-
-            var modal = document.getElementById("commentPopUp");
-            modal.style.display = "block";
-        },
-
-        async RemoveComment(photoID, commentID) {
-            await this.$axios.delete("/comment/" + commentID, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-
-            this.dataAccount();
-            this.getUserPhotos();
-            this.getUserComments(photoID);
-        },
-            
-
-
-
-        async dataAccount() {
-
-            try {
-                this.Username = localStorage.getItem("username");
-                this.userID = localStorage.getItem("userID");
-                let response = await this.$axios.get("/profile/" + this.Username, {
-                    headers: {
-                        Authorization: "Bearer " + localStorage.getItem("userID")
-                    }
-                });
-
-                this.banCount = response.data.banCount;
-                this.bansList = response.data.bansList;
-                this.followingCount = response.data.followingCount;
-                this.pictureCount = response.data.photoCount;
-                this.followerCount = response.data.followerCount;
-
-
-                if (this.pictureCount > 0) {
-                    this.getUserPhotos();
-                    this.ifPhotos = true;
-                };
-
-            } catch (e) {
-                this.errormsg = e.toString();
-            }
-
-        },
-
-
-        async GetFollowingList() {
-            try {
-                let response = await this.$axios.get("/followings", {
-                    headers: {
-                        Authorization: "Bearer " + localStorage.getItem("userID")
-                    }
-                });
-                this.followingsList = response.data;
-                var modal = document.getElementById("followingPopUp");
-                modal.style.display = "block";
-            }
-            catch (e) {
-                this.errormsg = e.toString();
-            }
-        },
-
-
-
-        close() {
-            var modal = document.getElementById("commentPopUp");
-
-            var followingPopUp = document.getElementById("followingPopUp");
-            var banPopUp = document.getElementById("banPopUp");
-            var followPopUp = document.getElementById("followPopUp");
-
-            followingPopUp.style.display = "none";
-            banPopUp.style.display = "none";
-            followPopUp.style.display = "none";
-
-            modal.style.display = "none";
-        },
-        async TheFollowers() {
-        
-                let response = await this.$axios.get("/followers", {
-                    headers: {
-                        Authorization: "Bearer " + localStorage.getItem("userID")
-                    }
-                });
-                this.followersList = response.data;
-                var modal = document.getElementById("followPopUp");
-                modal.style.display = "block";
-        
-        },
-        async GetBansList() {
-            try {
-                var modal = document.getElementById("banPopUp");
-                modal.style.display = "block";
-            }
-            catch (e) {
-                this.errormsg = "cant get ban List";
-            }
-        },
-
-
-        async changeUsername() {
-            if (this.newUsername == "") {
-                this.errormsg = "The new username cant be empty!!!"
-            } if (this.newUsername == this.username) {
-                this.errormsg = "The new username cant be the same as your current"
-            } else {
-                try {
-                    let response = await this.$axios.put("/username/" + this.newUsername, {
-                        headers: {
-                            Authorization: "Bearer " + this.userID
-                        }
-                    })
-                    this.Username = response.data;
-                    localStorage.setItem("username", this.Username);
-                } catch (e) {
-                    this.errormsg = "Error updating username";
-                }
-            }
-        },
-        async InsertPic() {
-                try{     
-                    console.log("pls work");
-                    const aFile=this.$refs.picFile.files[0];
-                    console.log(aFile);
-                 
-                    let response= await this.$axios.post("/photo", aFile, {
-                        headers: {
-                            Authorization: "Bearer " + localStorage.getItem("userID")
-                        }
-                    });
-
-                    this.dataAccount();
-                }
-            catch(e){
-                    this.errormsg=e.toString();
-                }
-        },
-    
-
 
     async LikePicture(photoID) {
-        try {
-            await this.$axios.post("/photo/" + photoID + "/like", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-            this.dataAccount();
-
-        } catch (e) {
-            this.errormsg = e.toString;
-
-
-        }
+      try {
+        await this.$axios.post("/photo/" + photoID + "/like", null, {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("userID"),
+          },
+        });
+        this.dataAccount();
+      } catch (e) {
+        this.errormsg = e.toString();
+      }
     },
 
     async unLikePicture(photoID) {
-        try {
-            await this.$axios.delete("/photo/" + photoID + "/like", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-            this.dataAccount();
-
-        } catch (e) {
-            this.errormsg = e.toString;
-        }
-
-
+      try {
+        await this.$axios.delete("/photo/" + photoID + "/like", {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("userID"),
+          },
+        });
+        this.dataAccount();
+      } catch (e) {
+        this.errormsg = e.toString();
+      }
     },
-
-
 
     async deletePicture(photoID) {
-        await this.$axios.delete("/photo/" + photoID, {
-            headers: {
-                Authorization: "Bearer " + localStorage.getItem("userID")
-            }
-        });
-        this.dataAccount();
+      await this.$axios.delete("/photo/" + photoID, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID"),
+        },
+      });
+      this.dataAccount();
     },
-    async InsertComment(photoID, text){
-        await this.$axios.post("/photo/" + photoID , {comment: text}, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-        this.dataAccount();
-      
-},
+    async InsertComment(photoID, text) {
+      await this.$axios.post(
+        "/photo/" + photoID,
+        { comment: text },
+        {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("userID"),
+          },
+        }
+      );
+      this.dataAccount();
+    },
 
     async getUserPhotos() {
-        let pictures = await this.$axios.get("/photouser/" + this.Username, {
-            headers: {
-                Authorization: "Bearer " + localStorage.getItem("userID")
-            }
-        });
-        console.log(pictures.data);
-        this.photoList = pictures.data;
-        console.log(this.photoList);
-        var length = this.photoList.length;
+      let pictures = await this.$axios.get("/photouser/" + this.Username, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("userID"),
+        },
+      });
+      console.log(pictures.data);
+      this.photoList = pictures.data;
+      console.log(this.photoList);
+      var length = this.photoList.length;
 
-        for (let i = 0; i < length; i++) {
-            this.photoList[i].photo = 'data:image/png;base64,' + this.photoList[i].photoFile;
- 
-
-        }
-        console.log(this.photoList);
+      for (let i = 0; i < length; i++) {
+        this.photoList[i].photo =
+          "data:image/png;base64," + this.photoList[i].photoFile;
+      }
+      console.log(this.photoList);
     },
-},
-}
-
-
+  },
+};
 </script>
+
 <template>
     <br>
     <h1> <b><span>{{ this.Username }}</span> 's Account </b></h1>
@@ -386,12 +366,12 @@ export default {
     <div class="container" v-if="this.pictureCount > 0">
         <div class="card-columns">
             <div v-for="photo in this.photoList" v-bind:key="photo.photoID">
-                <div class="card" style="width: 300px; height: 400px">
+                <div class="card" style="width: 300px; height: 450px">
                     <img class="card-img-top" :src=photo.photo alt="error in showing photo" style="width=300px; height: 200px">
 
                     <div class="card-body">
-                        <button class="btn " v-if="photo.ifLiked == true" @click="this.unLikePicture(photo.photoID)"> {{ photo.likeCount }}</button>
-                        <button class="btn" v-if="photo.ifLiked == false" @click="this.LikePicture(photo.photoID)"> {{ photo.likeCount }}</button>
+                        <button class="btn " v-if="photo.ifLiked == true" @click="this.unLikePicture(photo.photoID)"> unlike {{  photo.likeCount }}</button>
+                        <button class="btn" v-if="photo.ifLiked == false" @click="this.LikePicture(photo.photoID)"> like {{ photo.likeCount }}</button>
                         <br><button class="commentbtn" @click="getUserComments(photo.photoID)"> comments</button>
 
                         <div class="modal " id="commentPopUp" tabindex="-1" role="dialog"
@@ -414,7 +394,6 @@ export default {
                         </div>
                         <p> <b>
                                 date: {{ photo.date }}<br>
-                                likes: {{ photo.likesCount }}<br>
                                 comments: {{ photo.commentCount }}<br>
                             </b> </p>
 

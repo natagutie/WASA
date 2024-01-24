@@ -1,17 +1,12 @@
 package database
 
-func (db *appdbimpl) LikePhoto(like Likes) (Likes, error) {
-	liker, err := db.c.Exec("INSERT INTO like (userID, photoID) VALUES (?, ?)", like.UserID, like.PhotoID)
+func (db *appdbimpl) LikePhoto(like Likes) error {
+	_, err := db.c.Exec("INSERT INTO likes (userID, photoID) VALUES (?, ?)", like.UserID, like.PhotoID)
 	if err != nil {
-		return Likes{}, err
+		return err
 	}
 
-	likeID, err := liker.LastInsertId()
-	if err != nil {
-		return Likes{}, err
-	}
-	like.LikeID = likeID
-	return like, nil
+	return  nil
 }
 
 func (db *appdbimpl) UnlikePhoto(like Likes) error {
