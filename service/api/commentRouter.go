@@ -11,45 +11,40 @@ import (
 )
 
 func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
+	userID := getUserToken(r.Header.Get("Authorization"))
+	var commenter database.Comments
 
 	photoID, err := strconv.ParseUint(ps.ByName("photoID"), 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid photo ID", http.StatusBadRequest)
+		http.Error(w, "error with parsing photoId", http.StatusBadRequest)
+		return
+	}
+	username, err := rt.db.GetUsername(userID)
+	if err != nil {
+		http.Error(w, "cant get username", http.StatusBadRequest)
+		return
+	}
+	commenter.Username = username
+
+	err = json.NewDecoder(r.Body).Decode(&commenter)
+	if err != nil {
+		http.Error(w, "Error in decode request", http.StatusInternalServerError)
 		return
 	}
 
-	var comment database.Comment
-	if err != nil {
-		http.Error(w, "Error decoding request body", http.StatusBadRequest)
-		return
-	}
-	err = json.NewDecoder(r.Body).Decode(&comment)
-	if err != nil {
-		http.Error(w, "Error decoding", http.StatusInternalServerError)
-		return
-	}
+	commenter.UserID = userID
 
-	comment.UserID = userID
+	commenter.PhotoID = photoID
 
-	comment.PhotoID = photoID
-
-	username, err := rt.db.GetUsernameWithUserID(comment.UserID)
+	doComment, err := rt.db.InsertComment(commenter)
 	if err != nil {
-		http.Error(w, "cant get userID with username", http.StatusBadRequest)
-		return
-	}
-	comment.Username = username
-
-	commenter, err := rt.db.SetComment(comment)
-	if err != nil {
-		http.Error(w, "Error saving comment", http.StatusInternalServerError)
+		http.Error(w, "Error in uploading comment", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
 
 	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(commenter)
+	err = json.NewEncoder(w).Encode(doComment)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -58,7 +53,7 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, ps httpr
 }
 
 func (rt *_router) uncommentPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
+	userID := getUserToken(r.Header.Get("Authorization"))
 
 	commentID, err := strconv.ParseUint(ps.ByName("commentID"), 10, 64)
 	if err != nil {
@@ -66,14 +61,14 @@ func (rt *_router) uncommentPhoto(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	var comment database.Comment
+	var comment database.Comments
 
 	comment.UserID = userID
 	comment.CommentID = commentID
 
-	err = rt.db.RemoveComment(comment)
+	err = rt.db.DeleteComment(comment)
 	if err != nil {
-		http.Error(w, "Error deleting commentt", http.StatusInternalServerError)
+		http.Error(w, "couldnt delete comment :(", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
@@ -87,11 +82,11 @@ func (rt *_router) getComments(w http.ResponseWriter, r *http.Request, ps httpro
 
 	photoID, err := strconv.ParseUint(ps.ByName("photoID"), 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid photo ID", http.StatusBadRequest)
+		http.Error(w, "photo ID smth wrong with it", http.StatusBadRequest)
 		return
 	}
 
-	comments, err := rt.db.GetComments(photoID)
+	comments, err := rt.db.GetPhotoComments(photoID)
 	if err != nil {
 		http.Error(w, "cant get userID with username", http.StatusBadRequest)
 		return

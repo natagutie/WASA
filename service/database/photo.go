@@ -1,89 +1,77 @@
 package database
 
-// set pic
-func (db *appdbimpl) SetPic(pic Photo) error {
-	_, err := db.c.Exec("INSERT INTO photos (userID, username, date, photo) VALUES (?, ?, ?, ?)", pic.UserID, pic.Username, pic.Date, pic.Photo)
+func (db *appdbimpl) UploadPhoto(picture Photos) error {
+	_, err := db.c.Exec("INSERT INTO photos (userID, username, date, photo) VALUES (?, ?, ?, ?)", picture.UserID, picture.PUsername, picture.Date, picture.Photo)
 	if err != nil {
-		return err // Return if error
+		return err
 	}
-	return nil // Void for no error
+	return nil
 }
 
-// Remove pic
-func (db *appdbimpl) RemovePic(picID Photo) error {
-	// Delete from the photo table
-	_, err := db.c.Exec("DELETE FROM photos WHERE photoID=?", picID.PhotoID)
-	if err != nil {
-		return err // Return error
-	}
-
-	// Delete from the like table
-	_, err = db.c.Exec("DELETE FROM like WHERE photoID=?", picID.PhotoID)
+func (db *appdbimpl) DeletePhoto(p Photos) error {
+	_, err := db.c.Exec("DELETE FROM photos WHERE photoID=?", p.PhotoID)
 	if err != nil {
 		return err
 	}
 
-	// Delete from the comment table
-	_, err = db.c.Exec("DELETE FROM comment WHERE photoID=?", picID.PhotoID)
+	_, err = db.c.Exec("DELETE FROM comments WHERE photoID=?", p.PhotoID)
 	if err != nil {
 		return err
 	}
 
-	return nil // void if no errors
+	_, err = db.c.Exec("DELETE FROM likes WHERE photoID=?", p.PhotoID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
 func (db *appdbimpl) GetPhotoCount(userID string) (int, error) {
-	var photoCount int
-	err := db.c.QueryRow("SELECT COUNT(*) FROM photos WHERE userID = ?", userID).Scan(&photoCount)
+	var count int
+	err := db.c.QueryRow("SELECT COUNT(*) FROM photos WHERE userID = ?", userID).Scan(&count)
 
 	if err != nil {
 		return 0, err
 	}
 
-	return photoCount, nil
+	return count, nil
 }
 
-func (db *appdbimpl) GetPhotos(pixel Photo) ([]Photo, error) {
-	var photo []Photo
-	rows, err := db.c.Query("SELECT photoID, userID, date, photo FROM photos WHERE userID = ? ORDER BY date DESC", pixel.PhotoUserID)
+func (db *appdbimpl) GetPhotos(picture Photos) ([]Photos, error) {
+	var photo []Photos
+	rows, err := db.c.Query("SELECT photoID, userID, date, photo FROM photos WHERE username = ? ORDER BY date DESC", picture.PUsername)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&pixel.PhotoID, &pixel.PhotoUserID, &pixel.Date, &pixel.Photo)
+		err = rows.Scan(&picture.PhotoID, &picture.UserID, &picture.Date, &picture.Photo)
 		if err != nil {
 			return nil, err
 		}
-		likeCount, err := db.GetLikeCount(pixel)
+		err = db.c.QueryRow("SELECT COUNT(*) FROM likes WHERE photoID=?", picture.PhotoID).Scan(&picture.LikeCount)
 		if err != nil {
 			return nil, err
 		}
-		pixel.LikesNum = likeCount
 
-		commentCount, err := db.GetCommentCount(pixel)
+		err = db.c.QueryRow("SELECT COUNT(*) FROM comments WHERE photoID=?", picture.PhotoID).Scan(&picture.CommentCount)
 		if err != nil {
 			return nil, err
 		}
-		pixel.CommentNum = commentCount
-
-		var like Like
-		like.PhotoID = pixel.PhotoID
-		like.UserID = pixel.UserID
-		isliked, err := db.IsLiked(like)
+		err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM likes WHERE userID=? AND photoID=?)", picture.UserID, picture.PhotoID).Scan(&picture.IfLiked)
 		if err != nil {
 			return nil, err
 		}
-		pixel.IsLiked = isliked
 
-		comments, err := db.GetComments(pixel.PhotoID)
+		comments, err := db.GetPhotoComments(picture.PhotoID)
 		if err != nil {
 			return nil, err
 		}
-		pixel.Comments = comments
+		picture.Comments = comments
 
-		photo = append(photo, pixel)
+		photo = append(photo, picture)
 
 	}
 	err = rows.Err()

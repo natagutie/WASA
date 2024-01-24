@@ -1,463 +1,456 @@
 <script>
 export default {
-	data: function() {
-		return {
+    data: function () {
+        return {
             errormsg: null,
-            hasposts: false,
-            userUsername: localStorage.getItem("username"),
-            newUser: "",
+            ifPhotos: false,
+            Username: localStorage.getItem("username"),
+            newUsername: "",
             userID: localStorage.getItem("userID"),
+            filePic: "",
+            followersList: [],
+            followingsList: [],
+            bansList: [],
+            comment:"",
+
             followerCount: null,
             followingCount: null,
-            followers:[],
-            following:[],
-            bans:[],
-            bannedCount:null,
-            photoCount:null,
-            isFollow: false,
-            isBan: false,
-            isLoading: true,
-            likeID: 0,
 
-        
-            photos:[{
-                photoID:0,
-                username:"",
-                like_count:0,
-                comment_count:0,
-                date:"",
-                photo: "",
-                isLiked:true,
+            banCount: null,
+            pictureCount: null,
+            commentList: [{
+                commentID: "",
+                username: "",
+                photoID:"",
                 comment: "",
-                }
+
+            }],
+
+
+            photoList: [{
+                photoID: "",
+                likeCount: "",
+                comment: "",
+                username: "",
+                commentCount: "",
+                date: "",
+                photo: "",
+                ifLiked: false,
+                text: "",
+
+            }
             ],
-            comments:[{
-                        comment_id: null,
-                        username: "",
-                        comment:"",
+        }
+    },
 
-                    }],
+    created() {
+        this.dataAccount();
+    },
+
+    methods: {
+
+        async getUserComments(photoID) {
+            let response = await this.$axios.get("/photo/" + photoID, {
+                headers: {
+                    Authorization: "Bearer " + localStorage.getItem("userID")
+                }
+            });
+            
+            for (let i = 0; i < this.commentList.length; i++) {
+            this.commentList[i].commentID = response.data[0].commentID;
+            this.commentList[i].photoID = response.data[0].photoID;
+            this.commentList[i].comment = response.data[0].comment;
+            this.commentList[i].username = response.data[0].username;
+
+            console.log(this.commentList[i].photoID);
+            console.log(this.commentList[i].commentID);
+        }
+
+            var modal = document.getElementById("commentPopUp");
+            modal.style.display = "block";
+        },
+
+        async RemoveComment(photoID, commentID) {
+            await this.$axios.delete("/comment/" + commentID, {
+                headers: {
+                    Authorization: "Bearer " + localStorage.getItem("userID")
+                }
+            });
+
+            this.dataAccount();
+            this.getUserPhotos();
+            this.getUserComments(photoID);
+        },
+            
+
+
+
+        async dataAccount() {
+
+            try {
+                this.Username = localStorage.getItem("username");
+                this.userID = localStorage.getItem("userID");
+                let response = await this.$axios.get("/profile/" + this.Username, {
+                    headers: {
+                        Authorization: "Bearer " + localStorage.getItem("userID")
+                    }
+                });
+
+                this.banCount = response.data.banCount;
+                this.bansList = response.data.bansList;
+                this.followingCount = response.data.followingCount;
+                this.pictureCount = response.data.photoCount;
+                this.followerCount = response.data.followerCount;
+
+
+                if (this.pictureCount > 0) {
+                    this.getUserPhotos();
+                    this.ifPhotos = true;
+                };
+
+            } catch (e) {
+                this.errormsg = e.toString();
             }
 
-        
-		},
-     created(){
-
-        this.AccountInfo();
-        
-    },
-
-	methods: {
-
-    async getComments(photoID) {
-        let response=await this.$axios.get("/photo/" + photoID +"/comment", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-        this.comments=response.data;
-        var modal = document.getElementById("commentModal");
-        modal.style.display = "block";
-    },
-    
-    async deleteComment(commentID, photoID) {
-        let response=await this.$axios.delete("/uncomment/"+commentID, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-        
-        this.refresh();
-        this.getComments(photoID);
-    
-    },
-
-    async closeModal() {
-        var modal = document.getElementById("commentModal");
-        var followmodal = document.getElementById("followerModal");
-        var followingmodal = document.getElementById("followingModal");
-        var banModal = document.getElementById("banModal");
-
-        followmodal.style.display = "none";
-        followingmodal.style.display = "none";
-        banModal.style.display = "none";
-        modal.style.display = "none";
-    },
-
-	async AccountInfo() {
-            
-	    try {
-            this.userUsername=localStorage.getItem("username");
-            this.userID=localStorage.getItem("userID");
-            let response=await this.$axios.get("/username/"+ this.userUsername + "/profile", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-                    this.followerCount=response.data.followed_count;
-                    this.followingCount=response.data.following_count;
-                    this.photoCount=response.data.pic_numb;
-                    this.bannedCount=response.data.ban_count;
-                    this.bans=response.data.bans;
-
-            if(this.photoCount>0){
-                    this.getPhotos();
-                    this.hasposts=true;
-            };
-            
-		} catch (e) {
-				this.errormsg = e.toString();
-			}
-		
-    },
-    async refresh() {
-		this.AccountInfo();    
-	},
+        },
 
 
-    async LikePhoto(photoID){
-
-    let response=await this.$axios.post("/user/" + this.userID + "/photo/" + photoID +"/like", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-    });
-    this.getPhotos();
-    },
-
-    async unLikePhoto(photoID){
-
-    let response=await this.$axios.delete("/user/" + this.userID + "/photo/" + photoID +"/like", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-    this.getPhotos();
-
-    },
-
-
-    async updateUsername(){
-
-        if(this.newUser==""){
-            this.errormsg="you must enter a username!!!"
-
-        }else{
-            let response=await this.$axios.put("/user/"+ this.userID + "/setusername/" + this.newUser, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-            localStorage.setItem("username", response.data);
-            this.refresh();
-        }
-
-
-    },
-	
-    async getFollower(){
-        try{     
-            let response=await this.$axios.get("/user/"+ this.userID + "/followers", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-            this.followers=response.data;
-            var modal = document.getElementById("followerModal");
-            modal.style.display = "block"; 
-        }
-     catch(e){
-            this.errormsg=e.toString();
-        }
-    },
-    async getFollowing(){
-        try{     
-           
-            let response=await this.$axios.get("/user/"+ this.userID + "/followings", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-            this.following=response.data;
-            var modal = document.getElementById("followingModal");
-            modal.style.display = "block";
-        }
-     catch(e){
-            this.errormsg=e.toString();
-        }
-    },
-    async getBans(){
-        try{    
-            var modal = document.getElementById("banModal");
-            modal.style.display = "block";
-        }
-     catch(e){
-            this.errormsg=e.toString();
-        }
-    },
-
-    async uploadPhoto(){
-        try{     
-            const uploadpic=this.$refs.pico.files[0];
-            let response= await this.$axios.post("/photo/upload/" + this.userID, uploadpic, {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
-                }
-            });
-            this.refresh();
+        async GetFollowingList() {
+            try {
+                let response = await this.$axios.get("/followings", {
+                    headers: {
+                        Authorization: "Bearer " + localStorage.getItem("userID")
+                    }
+                });
+                this.followingsList = response.data;
+                var modal = document.getElementById("followingPopUp");
+                modal.style.display = "block";
             }
-     catch(e){
-            this.errormsg=e.toString();
-        }
-    },
-    async deletePhoto(photoID) {
-        let response= await this.$axios.delete("/user/" + this.userID + "/photo/" + photoID +"/remove", {
-                headers: {
-                    Authorization: "Bearer " + localStorage.getItem("userID")
+            catch (e) {
+                this.errormsg = e.toString();
+            }
+        },
+
+
+
+        close() {
+            var modal = document.getElementById("commentPopUp");
+
+            var followingPopUp = document.getElementById("followingPopUp");
+            var banPopUp = document.getElementById("banPopUp");
+            var followPopUp = document.getElementById("followPopUp");
+
+            followingPopUp.style.display = "none";
+            banPopUp.style.display = "none";
+            followPopUp.style.display = "none";
+
+            modal.style.display = "none";
+        },
+        async TheFollowers() {
+        
+                let response = await this.$axios.get("/followers", {
+                    headers: {
+                        Authorization: "Bearer " + localStorage.getItem("userID")
+                    }
+                });
+                this.followersList = response.data;
+                var modal = document.getElementById("followPopUp");
+                modal.style.display = "block";
+        
+        },
+        async GetBansList() {
+            try {
+                var modal = document.getElementById("banPopUp");
+                modal.style.display = "block";
+            }
+            catch (e) {
+                this.errormsg = "cant get ban List";
+            }
+        },
+
+
+        async changeUsername() {
+            if (this.newUsername == "") {
+                this.errormsg = "The new username cant be empty!!!"
+            } if (this.newUsername == this.username) {
+                this.errormsg = "The new username cant be the same as your current"
+            } else {
+                try {
+                    let response = await this.$axios.put("/username/" + this.newUsername, {
+                        headers: {
+                            Authorization: "Bearer " + this.userID
+                        }
+                    })
+                    this.Username = response.data;
+                    localStorage.setItem("username", this.Username);
+                } catch (e) {
+                    this.errormsg = "Error updating username";
                 }
-            });
-        this.refresh();
-        this.getPhotos();
+            }
+        },
+        async InsertPic() {
+                try{     
+                    console.log("pls work");
+                    const aFile=this.$refs.picFile.files[0];
+                    console.log(aFile);
+                 
+                    let response= await this.$axios.post("/photo", aFile, {
+                        headers: {
+                            Authorization: "Bearer " + localStorage.getItem("userID")
+                        }
+                    });
+
+                    this.dataAccount();
+                }
+            catch(e){
+                    this.errormsg=e.toString();
+                }
+        },
     
-       
-    },
-       
-    async getPhotos(){
-        let response=await this.$axios.get("/user/" + this.userID + "/photo/" + this.userID , {
+
+
+    async LikePicture(photoID) {
+        try {
+            await this.$axios.post("/photo/" + photoID + "/like", {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
-        this.photos=response.data;
-        for (let i=0;i<this.photos.length;i++){  
-            this.photos[i].photo= 'data:image/png;base64,'+ this.photos[i].photo;     
+            this.dataAccount();
+
+        } catch (e) {
+            this.errormsg = e.toString;
+
+
         }
     },
 
-    async uploadComment(photoID,yuhcomment){
-        let response=await this.$axios.post("/user/" + this.userID + "/photo/" + photoID +"/comment", { comment: yuhcomment }, {
+    async unLikePicture(photoID) {
+        try {
+            await this.$axios.delete("/photo/" + photoID + "/like", {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
-        this.AccountInfo();
-        this.getPhotos();
+            this.dataAccount();
+
+        } catch (e) {
+            this.errormsg = e.toString;
+        }
+
+
+    },
+
+
+
+    async deletePicture(photoID) {
+        await this.$axios.delete("/photo/" + photoID, {
+            headers: {
+                Authorization: "Bearer " + localStorage.getItem("userID")
+            }
+        });
+        this.dataAccount();
+    },
+    async InsertComment(photoID, text){
+        await this.$axios.post("/photo/" + photoID , {comment: text}, {
+                headers: {
+                    Authorization: "Bearer " + localStorage.getItem("userID")
+                }
+            });
+        this.dataAccount();
+      
 },
+
+    async getUserPhotos() {
+        let pictures = await this.$axios.get("/photouser/" + this.Username, {
+            headers: {
+                Authorization: "Bearer " + localStorage.getItem("userID")
+            }
+        });
+        console.log(pictures.data);
+        this.photoList = pictures.data;
+        console.log(this.photoList);
+        var length = this.photoList.length;
+
+        for (let i = 0; i < length; i++) {
+            this.photoList[i].photo = 'data:image/png;base64,' + this.photoList[i].photoFile;
+ 
+
+        }
+        console.log(this.photoList);
+    },
 },
 }
 
+
 </script>
 <template>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    </head>
-  
-    
+    <br>
+    <h1> <b><span>{{ this.Username }}</span> 's Account </b></h1>
 
-    <h2 > <span>{{this.userUsername}}</span> Account   </h2>
+    <br>
 
-  
-    <div class="upload">
+
     <div class="btn-group btn-group-sm">
-					<input type="file" accept="image/*" class="btn btn-xs" id="inputImage" ref="pico" @change="uploadFile" >
-
-                    <button class="btn btn-default " @click="uploadPhoto">Upload</button>
-				</div>
-    </div>
+				<input type="file" accept="image/*" class="btn btn-xs" id="inputImage" ref="picFile" @change="uploadFile" >
+                <button class="btn btn-default " @click="InsertPic">Upload</button>
+	</div>
    
-    <div class="umidk">
-    <div class="btn-group">
- 
-            <button class="btn" @click="getFollower"> followers: {{this.followerCount}} </button>
-    
-            <button class="btn" @click="getFollowing"> following: {{this.followingCount}} </button>
-            <button class="btn" @click="getBans"> bans: {{this.bannedCount}} </button>
-
-         
-   
-            <button class="btn"> photos: {{this.photoCount}} </button>
-    </div>
-    </div>
-
-<div class="modal " id="followerModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-scrollable" role="document">
-        <div class="modal-content">
-            <span @click="closeModal" class="close">&times;</span>
-        
-            <div class="modal-header">
-                <h5 class="modal-title">Followers</h5>
-            </div>
-            <div class="modal-body" >
-                <div v-for="follow in this.followers" v-bind:key="follow">
-                <RouterLink :to="'user/' + follow + '/account'" class="nav-link">
-                    <p> {{ follow }}  </p>
-                </RouterLink>
-            </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 
-<div class="modal " id="followingModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-scrollable" role="document">
-        <div class="modal-content">
-            <span @click="closeModal" class="close">&times;</span>
-        
-            <div class="modal-header">
-                <h5 class="modal-title">Followings</h5>
-            </div>
-            
-            <div class="modal-body">
-                <div v-for="follow in this.following" v-bind:key="follow">
-                <RouterLink :to="'user/' + follow + '/account'" class="nav-link">
-                    <p> {{ follow }}  </p>
-                </RouterLink>
-            </div>
-        </div></div>
-    </div>
-</div>
+    <div class="btn-group" style="float: right;">
+    <button class="btn" @click="TheFollowers" > followers: {{ this.followerCount }} </button>
 
-
-
-<div class="modal" id="banModal" tabindex="-1" role="dialog" >
-    <div class="modal-dialog modal-dialog-scrollable" role="document">
-        <div class="modal-content">
-            <span @click="closeModal" class="close">&times;</span>
-        
-            <div class="modal-header">
-                <h5 class="modal-title"> Bans </h5>
-            </div>
-            <div class="modal-body" >
-                <div  v-for="ban in this.bans" v-bind:key="ban.banID">
-                <RouterLink :to="'user/' + ban + '/account'" class="nav-link">
-                    <p> {{ ban }}  </p>
-                </RouterLink>
-            </div></div>
-        </div>
-    </div>
-</div>
-
-
-<br>
-<div class="gro">
-    <input type="text" style="height: 40px;" id="username" v-model="this.newUser" placeholder="Enter new username" ><br>
-    <button class="btn btn-outline-dark" id="submit" @click="updateUsername"> submit  </button>
+    <button class="btn" @click="GetFollowingList"> following: {{ this.followingCount }} </button>
     </div><br>
-
-    <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
- 
-    </head>
-
-    <div class="container" v-if="this.hasposts==true">
-        <div class="card-columns">
-            <div v-for="photo in this.photos" style="width=300px" v-bind:key="photo.photoID">
-                <div class="card" style="width: 300px; height: 500px">
-                    <img class="card-img-top" :src=photo.photo  alt="unavailable" style="width=300px; height: 200px" >
-                    <hr>
-                    <div class="card-body">
-                        <button type="button" class="btn btn-danger" style="float: right;" @click="deletePhoto(photo.photoID)">Delete</button>
-
-                    <button class="fa fa-heart-o" v-if="photo.isLiked==true" @click="this.unLikePhoto(photo.photoID)"> {{ photo.like_count }}</button>
-                    <button class="fa fa-heart-o"  v-if="photo.isLiked==false" @click="this.LikePhoto(photo.photoID)"> {{ photo.like_count }}</button>
-                    <button  @click="getComments(photo.photoID)"> comments</button>
+    <br>
+    <div class="btn-group" style="float: right;">
+    <button class="btn" @click="GetBansList" style="float: right;"> bans: {{ this.banCount }} </button>
 
 
 
-                    <div class="modal " id="commentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable" role="document">
-        <div class="modal-content">
-            <span @click="closeModal" class="close">&times;</span>
-        
-            <div class="modal-header">
-                <h5 class="modal-title">Comments</h5>
-            </div>
-            
-            <div class="modal-body">
-                <div v-for="comment in this.comments" v-bind:key="comment.commentID">
-                <p> <b>{{ comment.username }}  </b> {{ comment.comment }} </p>
-                <button v-if="comment.username==this.userUsername" type="button" class="btn btn-danger" style="float: right;" @click="deleteComment(comment.comment_id, comment.photoID)">Delete</button>
-                <br>
+    <button class="btn" style="float: right;"> photos: {{ this.pictureCount }} </button>
+</div>
+
+    <div class="modal" id="followPopUp" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <span @click="close" class="close">&times;</span>
+
+                <div class="modal-header">
+                    <h7 style="color: #da91f1" class="modal-title">Followers</h7>
+                </div>
+                <div class="modal-body">
+                    <div v-for="follower in this.followersList" v-bind:key="follower">
+                        <RouterLink :to="  '/account/'+ follower" class="nav-link">
+                            <p> {{ follower }} </p>
+                        </RouterLink>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>              
-                    <p >  likes: {{ photo.like_count }}<br>
-                    comments: {{ photo.comment_count }}<br>
-                     date: {{ photo.date }}</p>
-   
-                    <div class="gro">
-                    <input type="text" id="comment" v-model="photo.comment" class="form-control" placeholder="input comment">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-dark" type="button" @click="uploadComment(photo.photoID, photo.comment)">post</button>
-                        </div>
-                    </div><br>
-                    </div>
-                    </div>
-                
+
+
+    <div class="modal " id="followingPopUp" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <span @click="close" class="close">&times;</span>
+
+                <div class="modal-header">
+                    <h7 style="color: #da91f1" class="modal-title">Followings</h7>
                 </div>
-</div>
-</div>
-        
+
+                <div class="modal-body">
+                    <div v-for="following in this.followingsList" v-bind:key="following">
+                        <RouterLink :to="  '/account/' + following" class="nav-link">
+                            <p> {{ following }} </p>
+                        </RouterLink>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="modal" id="banPopUp" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <span @click="close" class="close">&times;</span>
+
+                <div class="modal-header">
+                    <h7 style="color: #da91f1" class="modal-title"> Bans </h7>
+                </div>
+                <div class="modal-body">
+                    <div v-for="baner in this.bansList" v-bind:key="baner.banID">
+                        <RouterLink :to="'/account/' + baner" class="nav-link">
+                            <p> {{ baner }} </p>
+                        </RouterLink>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <br>
+    <br>
+    <br>
+    <div class="input-group mb-2">
+    <input type="text" style="height: 40px;" id="username" v-model="this.newUsername" class="form-control" placeholder="Enter username"><br>
+    <button class="btn" style="height: 40px" id="submit" @click="changeUsername"> submit </button>
+    </div><br> <br> <br> <br> <br> <br> <br>
+
+
+    <div class="container" v-if="this.pictureCount > 0">
+        <div class="card-columns">
+            <div v-for="photo in this.photoList" v-bind:key="photo.photoID">
+                <div class="card" style="width: 300px; height: 400px">
+                    <img class="card-img-top" :src=photo.photo alt="error in showing photo" style="width=300px; height: 200px">
+
+                    <div class="card-body">
+                        <button class="btn " v-if="photo.ifLiked == true" @click="this.unLikePicture(photo.photoID)"> {{ photo.likeCount }}</button>
+                        <button class="btn" v-if="photo.ifLiked == false" @click="this.LikePicture(photo.photoID)"> {{ photo.likeCount }}</button>
+                        <br><button class="commentbtn" @click="getUserComments(photo.photoID)"> comments</button>
+
+                        <div class="modal " id="commentPopUp" tabindex="-1" role="dialog"
+                            aria-labelledby="exampleModalScrollableTitle">
+                            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                                <div class="modal-content">
+                                    <span @click="close" class="close">&times;</span>
+                                    <div class="modal-header">
+                                        <h7 class="modal-title" style="color: #da91f1">Comments</h7>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div v-for="comment in this.commentList" v-bind:key="comment.commentID">
+                                            <h6> <b>{{ comment.username }} </b> {{ comment.comment }} </h6>
+                                            <button v-if="comment.username == this.Username" type="button" class="btn" style="float: right;" @click="RemoveComment( comment.photoID, comment.commentID)">Delete</button>
+                                            <br>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p> <b>
+                                date: {{ photo.date }}<br>
+                                likes: {{ photo.likesCount }}<br>
+                                comments: {{ photo.commentCount }}<br>
+                            </b> </p>
+
+                            <div class="input-group mb-2">
+
+                        <input type="text" style="width: 200px"  v-model="photo.text" class="form-control" placeholder="comment here!">
+                        <div class="input-group-append">
+                            <button class="btn" style="height: 50px" @click="InsertComment(photo.photoID, photo.text)">post</button>
+                        </div>
+                        </div><br>
+                        <button class="btn " style="float: left;"
+                            @click="deletePicture(photo.photoID)">Delete</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
+
 </template>
 
 
 <style>
-
-
-.fa-hearto {
-  color: red;
-  background-color: grey;
-  cursor: pointer;
-  height: 27px;
-}
-.fa-heart {
-  color: red;
-  cursor: pointer;
-  background-color: red;
-  height: 27px;
+.btn {
+    color: black;
+    background-color: pink;
 }
 
-.commenter{
-    display:flex;
-    flex-direction: row;
-    align-items:flex-end;
-    justify-content:flex-start;
- 
-}
-.card{
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-    width: 100px;
-    height:800px;
-    border-color: blue;  
+.card {
+    border-color: pink;
 }
 
-
-
-.combtn{
-    border-color: black;
-    margin-right: 200px;
-    width: 50px;
-    height:30px;
-    
-
+.modal-body {
+    background-color: pink;
 }
 
-.container {
-  margin-top: -100px;
-  margin-right: 50px;
-}
-
-.gro{
-    display:flex;
-    flex-direction: row;
-    align-items:flex-end;
-    justify-content:start;
-}
 
 </style>

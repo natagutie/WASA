@@ -1,105 +1,78 @@
 package database
 
-func (db *appdbimpl) SetFollow(follow Follow) error {
-	_, err := db.c.Exec("INSERT INTO follow ( userID, toFollowID) VALUES (?, ?)", follow.UserID, follow.FollowedID)
+func (db *appdbimpl) FollowUser(follow Follows) error {
+	_, err := db.c.Exec("INSERT INTO follows (username, fUsername) VALUES (?, ?)", follow.Username, follow.FUsername)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (db *appdbimpl) RemoveFollow(follow Follow) error {
-	_, err := db.c.Exec("DELETE FROM follow WHERE toFollowID=? AND userID=?", follow.FollowedID, follow.UserID)
+func (db *appdbimpl) UnFollowUser(follow Follows) error {
+	_, err := db.c.Exec("DELETE FROM follows WHERE fUsername=? AND username=?", follow.FUsername, follow.Username)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (db *appdbimpl) GetFollowCount(userID string) (int, error) {
-	var followCount int
-	err := db.c.QueryRow("SELECT COUNT(*) FROM follow WHERE toFollowID = ?", userID).Scan(&followCount)
 
-	if err != nil {
-		return 0, err
-	}
 
-	return followCount, nil
-}
-
-func (db *appdbimpl) GetFollowingCount(userID string) (int, error) {
-	var followingCount int
-	err := db.c.QueryRow("SELECT COUNT(*) FROM follow WHERE userID = ? ", userID).Scan(&followingCount)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return followingCount, nil
-}
-
-func (db *appdbimpl) IsFollowing(follow Follow) (bool, error) {
-	var isFollowing bool
-	err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM follow WHERE  userID=? AND toFollowID=?)", follow.UserID, follow.FollowedID).Scan(&isFollowing)
+func (db *appdbimpl) IfFollow(follow Follows) (bool, error) {
+	var follower bool
+	err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM follows WHERE username=? AND fUsername=?)", follow.Username, follow.FUsername).Scan(&follower)
 	if err != nil {
 		return false, err
 	}
-	return isFollowing, nil
+	return follower, nil
 
 }
 
-func (db *appdbimpl) GetFollowers(userID string) ([]string, error) {
-	var followers []string
-	rows, err := db.c.Query("SELECT userID FROM follow WHERE toFollowID = ?", userID)
+func (db *appdbimpl) GetUserFollowers(username string) ([]string, error) {
+	var followerList []string
+	rows, err := db.c.Query("SELECT username FROM follows WHERE fUsername = ?", username)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	for rows.Next() {
-		var followerUserID string
-		err = rows.Scan(&followerUserID)
-		if err != nil {
-			return nil, err
-		}
 
-		username, err := db.GetUsernameWithUserID(followerUserID)
+	for rows.Next() {
+		var usr string
+
+		err = rows.Scan(&usr)
 		if err != nil {
 			return nil, err
 		}
-		followers = append(followers, username)
+		followerList = append(followerList, usr)
 	}
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
 
-	return followers, nil
+	return followerList, nil
 }
 
-func (db *appdbimpl) GetFollowings(userID string) ([]string, error) {
-	var following []string
-	rows, err := db.c.Query("SELECT toFollowID FROM follow WHERE userID= ?", userID)
+func (db *appdbimpl) GetUserFollowings(username string) ([]string, error) {
+	var followingsList []string
+	rows, err := db.c.Query("SELECT fUsername FROM follows WHERE username= ?", username)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var followingUserID string
-		err = rows.Scan(&followingUserID)
-		if err != nil {
-			return nil, err
-		}
-		username, err := db.GetUsernameWithUserID(followingUserID)
+		var usr string
+		err = rows.Scan(&usr)
 		if err != nil {
 			return nil, err
 		}
 
-		following = append(following, username)
+		followingsList = append(followingsList, usr)
 	}
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
 
-	return following, nil
+	return followingsList, nil
 }

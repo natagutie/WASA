@@ -13,81 +13,80 @@ import (
 )
 
 func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	var pic database.Photo
 
-	userID := getAuth(r.Header.Get("Authorization"))
+	userID := getUserToken(r.Header.Get("Authorization"))
 
-	photo, err := io.ReadAll(r.Body) //reads image file from requestbody
+	photo, err := io.ReadAll(r.Body)
+	var picture database.Photos
+
+	picture.Photo = photo
 	if err != nil {
-		http.Error(w, "Invalid photo file", http.StatusBadRequest)
+		http.Error(w, "Something wrong with reading photo file", http.StatusBadRequest)
 		return
 	}
 
-	pic.UserID = userID
-	username, err := rt.db.GetUsernameWithUserID(pic.UserID)
+	picture.UserID = userID
+	username, err := rt.db.GetUsername(picture.UserID)
 	if err != nil {
 		http.Error(w, "cant get username with userID", http.StatusBadRequest)
 		return
 	}
-	pic.Username = username
+	picture.Username = username
 	nowtime := time.Now()
-	pic.Date = nowtime.Format("2006-01-02 15:04:05")
-	pic.Photo = photo
-	pic.CommentNum = 0
-	pic.LikesNum = 0
+	picture.Date = nowtime.Format("2006-01-02 15:04:05")
+	picture.Photo = photo
 
-	err = rt.db.SetPic(pic)
+	picture.PUsername = username
+
+	err = rt.db.UploadPhoto(picture)
 	if err != nil {
-		http.Error(w, "Error inserting picture", http.StatusInternalServerError)
+		http.Error(w, "Error uploading photo into database", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(pic)
+	err = json.NewEncoder(w).Encode(picture)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	var pic database.Photo
-
+	var picture database.Photos
 	photoID, err := strconv.ParseUint(ps.ByName("photoID"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid photo ID", http.StatusBadRequest)
 		return
 	}
+	userID := getUserToken(r.Header.Get("Authorization"))
 
-	userID := getAuth(r.Header.Get("Authorization"))
+	picture.UserID = userID
+	picture.PhotoID = photoID
 
-	pic.UserID = userID
-	pic.PhotoID = photoID
-
-	err = rt.db.RemovePic(pic)
+	err = rt.db.DeletePhoto(picture)
 	if err != nil {
-		http.Error(w, "Error saving comment", http.StatusInternalServerError)
+		http.Error(w, "Couldnt delete photo", http.StatusInternalServerError)
 		return
 	}
-
 	w.WriteHeader(http.StatusCreated)
 }
-func (rt *_router) getPhotos(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+func (rt *_router) getUserPhotos(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 
-	userID := getAuth(r.Header.Get("Authorization"))
-	photoUserID := ps.ByName("photoUserID")
-	var photo database.Photo
-	photo.UserID = userID
-	photo.PhotoUserID = photoUserID
+	userID := getUserToken(r.Header.Get("Authorization"))
+	pUsername := ps.ByName("photoUsername")
+	var p database.Photos
+	p.UserID = userID
+	p.PUsername = pUsername
 
-	pics, err := rt.db.GetPhotos(photo)
+	pictures, err := rt.db.GetPhotos(p)
 	if err != nil {
-		http.Error(w, "cant get photo list", http.StatusBadRequest)
+		http.Error(w, "cannot get the photo list", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(pics)
+	err = json.NewEncoder(w).Encode(pictures)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

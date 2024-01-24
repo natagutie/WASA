@@ -27,12 +27,12 @@ export default {
             console.log(this.isban);
 
 
-            let response2=await this.$axios.get("/username/"+ this.search + "/checkUser", {
+            let responser=await this.$axios.get("/username/"+ this.search + "/checkUser", {
                 headers: {
                     Authorization: "Bearer " + localStorage.getItem("userID")
                 }
             });
-            this.isUser=response2.data
+            this.isUser=responser.data
 
             if(this.search==""){
                 this.errormsg = "search cannot be empty"
@@ -47,7 +47,7 @@ export default {
             else{
               console.log(this.search)
                 
-              this.$router.push({path: "user/" + this.search + "/account"});
+              this.$router.push({path: "/account/" + this.search});
             }
         } 
 
@@ -71,10 +71,12 @@ export default {
     </div>
     <br><br>
 
-      <div class="gro">
-          <input class="text" type="text" style="height: 40px; width: 400px" v-model="search" placeholder="Search User">
-          <button class="btn btn-outline-secondary" id="submit" style="height: 40px;" @click="searchUser" > search  </button>
+    <div class="input-group mb-2">
+      <input type="text" style="width: 300px" id="username" v-model="this.search" class="form-control" placeholder="Username">
+      <div class="input-group-append">
+      <button class="btn" style="height: 40px" type="button" @click="searchUser">Search</button>
       </div>
+    </div>
         <ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
 
 
@@ -82,19 +84,5 @@ export default {
 </template>
 <style>
 
-
-.ok {
-  display: flex;
-  flex-direction:row;
-  align-items: center;
-  justify-content: center;
-
-
-}
-.gro{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 </style>

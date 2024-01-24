@@ -1,64 +1,49 @@
 package database
 
-func (db *appdbimpl) SetBan(ban Ban) error {
-	_, err := db.c.Exec("INSERT INTO ban (userID, banUserID) VALUES (?, ?)", ban.UserID, ban.BanUserID)
+func (db *appdbimpl) BanUser(ban Bans) error {
+	_, err := db.c.Exec("INSERT INTO bans (username, bUsername) VALUES (?, ?)", ban.Username, ban.BUsername)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (db *appdbimpl) SetUnBan(unban Ban) error {
-	_, err := db.c.Exec("DELETE FROM ban WHERE banUserID=? AND userID=? ", unban.BanUserID, unban.UserID)
+func (db *appdbimpl) UnBanUser(ban Bans) error {
+	_, err := db.c.Exec("DELETE FROM bans WHERE username=? AND bUsername=? ", ban.Username, ban.BUsername)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (db *appdbimpl) BanCheck(userID1 Ban) (bool, error) {
-	var isBan bool
-	err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM ban WHERE userID=? AND banUserID=?)", userID1.UserID, userID1.BanUserID).Scan(&isBan)
+func (db *appdbimpl) IfBan(ban Bans) (bool, error) {
+	var ifBan bool
+	err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM bans WHERE username=? AND bUsername=?)", ban.Username, ban.BUsername).Scan(&ifBan)
 	if err != nil {
 		return false, err
 	}
-	return isBan, nil
+	return ifBan, nil
 }
 
-func (db *appdbimpl) GetBanCount(userID string) (int, error) {
-	var banCount int
-	err := db.c.QueryRow("SELECT COUNT(*) FROM ban WHERE userID = ?", userID).Scan(&banCount)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return banCount, nil
-}
-func (db *appdbimpl) GetBans(userID string) ([]string, error) {
-	var bans []string
-	rows, err := db.c.Query("SELECT banUserID FROM ban WHERE userID= ?", userID)
+func (db *appdbimpl) GetBansList(username string) ([]string, error) {
+	var banList []string
+	rows, err := db.c.Query("SELECT bUsername FROM bans WHERE username= ?", username)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var banUserID string
-		err = rows.Scan(&banUserID)
+		var bUsername string
+		err = rows.Scan(&bUsername)
 		if err != nil {
 			return nil, err
 		}
-		username, err := db.GetUsernameWithUserID(banUserID)
-		if err != nil {
-			return nil, err
-		}
-
-		bans = append(bans, username)
+		banList = append(banList, username)
 	}
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
 
-	return bans, nil
+	return banList, nil
 }

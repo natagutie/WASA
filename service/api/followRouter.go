@@ -9,77 +9,100 @@ import (
 	"github.com/natagutie/WASA/service/database"
 )
 
-func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
 
-	followUsername := ps.ByName("followUsername")
-	followUserID, err := rt.db.GetUserIDWithUsername(followUsername)
-	if err != nil {
-		return
-	}
-	var follow database.Follow
-	follow.UserID = userID
-	follow.FollowedID = followUserID
-
-	isFollow, err := rt.db.IsFollowing(follow)
-	if err != nil {
-		return
-	}
-	if !isFollow {
-		_ = rt.db.SetFollow(follow)
-		w.WriteHeader(http.StatusCreated)
-
-	}
-
-}
 
 func (rt *_router) unfollowUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	getAuth(r.Header.Get("Authorization"))
+	userID := getUserToken(r.Header.Get("Authorization"))
+	var unfollow database.Follows
 
-	followUsername := ps.ByName("followUsername")
-	followUserID, err := rt.db.GetUserIDWithUsername(followUsername)
+	fUsername := ps.ByName("fUsername")
+	username, err := rt.db.GetUsername(userID)
 	if err != nil {
 		http.Error(w, "cant get userID with username", http.StatusBadRequest)
-
 		return
 	}
 
-	username := ps.ByName("username")
-	userrID, err := rt.db.GetUserIDWithUsername(username)
+	unfollow.UserID = userID
+	unfollow.Username = username
+	unfollow.FUsername = fUsername
+
+	err = rt.db.UnFollowUser(unfollow)
 	if err != nil {
-		http.Error(w, "cant get userID with username", http.StatusBadRequest)
-
+		http.Error(w, "cannot unfollow :(", http.StatusBadRequest)
 		return
 	}
-	var follow database.Follow
-	follow.UserID = userrID
-	follow.FollowedID = followUserID
-
-	isFollow, err := rt.db.IsFollowing(follow)
-	if err != nil {
-		return
-	}
-
-	if isFollow {
-		_ = rt.db.RemoveFollow(follow)
-
-		message := "User unfollowed successfully"
-		w.Write([]byte(message))
-	}
+	w.WriteHeader(http.StatusCreated)
 
 }
-
-func (rt *_router) getFollowers(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
-
-	followers, err := rt.db.GetFollowers(userID)
+func (rt *_router) ifFollowing(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	userID := getUserToken(r.Header.Get("Authorization"))
+	username, err := rt.db.GetUsername(userID)
 	if err != nil {
-		http.Error(w, "cant get list of followers", http.StatusBadRequest)
+		http.Error(w, "cant find username", http.StatusBadRequest)
+
+		return
+	}
+	fUsername := ps.ByName("fUsername")
+
+	var follow database.Follows
+	follow.UserID = userID
+	follow.Username = username
+	follow.FUsername = fUsername
+
+	FollowChecker, err := rt.db.IfFollow(follow)
+	if err != nil {
 		return
 	}
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(followers)
+	err = json.NewEncoder(w).Encode(FollowChecker)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+}
+func (rt *_router) followUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	userID := getUserToken(r.Header.Get("Authorization"))
+
+	fUsername := ps.ByName("fUsername")
+	username, err := rt.db.GetUsername(userID)
+	if err != nil {
+		return
+	}
+	var follow database.Follows
+	follow.UserID = userID
+	follow.Username = username
+	follow.FUsername = fUsername
+
+	err = rt.db.FollowUser(follow)
+	if err != nil {
+		http.Error(w, "cant follow user", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+
+}
+
+func (rt *_router) getUserFollowers(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	userID := getUserToken(r.Header.Get("Authorization"))
+	w.Header().Set("content-type", "application/json")
+
+	username, err := rt.db.GetUsername(userID)
+	if err != nil {
+		http.Error(w, "cant find username", http.StatusBadRequest)
+
+		return
+	}
+
+	followersList, err := rt.db.GetUserFollowers(username)
+	if err != nil {
+		http.Error(w, "cant get user followers list", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(followersList)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -87,58 +110,23 @@ func (rt *_router) getFollowers(w http.ResponseWriter, r *http.Request, ps httpr
 
 }
 
-func (rt *_router) getFollowings(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
+func (rt *_router) getUserFollowings(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	userID := getUserToken(r.Header.Get("Authorization"))
 	w.Header().Set("content-type", "application/json")
 
-	followers, err := rt.db.GetFollowings(userID)
+	username, err := rt.db.GetUsername(userID)
+	if err != nil {
+		http.Error(w, "cant find username", http.StatusBadRequest)
+
+		return
+	}
+	followingList, err := rt.db.GetUserFollowings(username)
 	if err != nil {
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(followers)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-}
-
-func (rt *_router) isFollowing(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
-
-	w.Header().Set("content-type", "application/json")
-
-	followUsername := ps.ByName("followUsername")
-	followUserID, err := rt.db.GetUserIDWithUsername(followUsername)
-	if err != nil {
-		http.Error(w, "cant find userID with username", http.StatusBadRequest)
-
-		return
-	}
-	username := ps.ByName("username")
-	userrID, err := rt.db.GetUserIDWithUsername(username)
-	if err != nil {
-		http.Error(w, "cant find userID with username", http.StatusBadRequest)
-
-		return
-	}
-	var follow database.Follow
-	if userrID == userID {
-		follow.UserID = userID
-	}
-	follow.UserID = userrID
-
-	follow.FollowedID = followUserID
-
-	isFollow, err := rt.db.IsFollowing(follow)
-	if err != nil {
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(isFollow)
+	err = json.NewEncoder(w).Encode(followingList)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

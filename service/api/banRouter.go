@@ -10,95 +10,64 @@ import (
 )
 
 func (rt *_router) banUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
-
-	banUsername := ps.ByName("banUsername")
-	banUserID, err := rt.db.GetUserIDWithUsername(banUsername)
+	userID := getUserToken(r.Header.Get("Authorization"))
+	username, err := rt.db.GetUsername(userID)
 	if err != nil {
-		return
-	}
-	var ban database.Ban
-	ban.UserID = userID
-	ban.BanUserID = banUserID
-
-	isbanned, err := rt.db.BanCheck(ban)
-	if err != nil {
+		http.Error(w, "failed getting username", http.StatusBadRequest)
 		return
 	}
 
-	if !isbanned {
-		err = rt.db.SetBan(ban) // If not banned then ban
-		if err != nil {
-			http.Error(w, "mffff helpmeeee", http.StatusBadRequest)
-			return
-		}
-		w.Header().Set("content-type", "application/json")
+	bUsername := ps.ByName("bUsername")
 
-		message := "User banned successfully"
-		w.Write([]byte(message))
+	var ban database.Bans
+	ban.Username = username
+	ban.BUsername = bUsername
 
+	err = rt.db.BanUser(ban)
+	if err != nil {
+		http.Error(w, "failed to ban user", http.StatusBadRequest)
+		return
 	}
+	w.Header().Set("content-type", "application/json")
+
 }
 
 func (rt *_router) unbanUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userID := getAuth(r.Header.Get("Authorization"))
-
-	banUsername := ps.ByName("banUsername")
-	banUserID, err := rt.db.GetUserIDWithUsername(banUsername)
+	userID := getUserToken(r.Header.Get("Authorization"))
+	username, err := rt.db.GetUsername(userID)
 	if err != nil {
 		return
 	}
-	var ban database.Ban
-	ban.UserID = userID
-	ban.BanUserID = banUserID
 
-	isbanned, err := rt.db.BanCheck(ban)
+	bUsername := ps.ByName("bUsername")
+
+	var baner database.Bans
+	baner.BUsername = bUsername
+	baner.Username = username
+
+	err = rt.db.UnBanUser(baner)
 	if err != nil {
+		http.Error(w, "failed to unban user", http.StatusBadRequest)
 		return
 	}
-	// If already banned then we unban
-	if isbanned {
-		err = rt.db.SetUnBan(ban)
-		if err != nil {
-			http.Error(w, "mffff whyyy", http.StatusBadRequest)
-			return
-		}
-		w.Header().Set("content-type", "application/json")
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 
-		message := "User unbanned successfully"
-		w.Write([]byte(message))
-
-	}
 }
 
-func (rt *_router) isBan(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-	userIDD := getAuth(r.Header.Get("Authorization"))
+func (rt *_router) checkIfBan(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+
 	username := ps.ByName("username")
-	userID, err := rt.db.GetUserIDWithUsername(username)
+
+	bUsername := ps.ByName("bUsername")
+
+	var baner database.Bans
+	baner.Username = username
+	baner.BUsername = bUsername
+
+	isbanned, err := rt.db.IfBan(baner)
 	if err != nil {
-		http.Error(w, "cant find userID with username", http.StatusBadRequest)
-
-		return
-	}
-
-	banUsername := ps.ByName("banUsername")
-	banUserID, err := rt.db.GetUserIDWithUsername(banUsername)
-	if err != nil {
-		http.Error(w, "cant find userID with username", http.StatusBadRequest)
-
-		return
-	}
-	var ban database.Ban
-	if userIDD == userID {
-		ban.UserID = userID
-	}
-
-	ban.UserID = userID
-	ban.BanUserID = banUserID
-
-	isbanned, err := rt.db.BanCheck(ban)
-	if err != nil {
-		http.Error(w, "Cant check if banned", http.StatusBadRequest)
+		http.Error(w, "Cannot check whether user is banned !", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
